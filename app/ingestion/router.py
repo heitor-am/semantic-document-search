@@ -143,7 +143,9 @@ async def list_jobs(
         BeforeValidator(_empty_or_null_to_none),
         Query(description="Filter by job state; omit or pass 'null' for no filter"),
     ] = None,
-    skip: Annotated[int, Query(ge=0)] = 0,
+    # le=1_000_000 caps pagination well above any realistic backlog and
+    # below int64 overflow that crashes SQLite's OFFSET.
+    skip: Annotated[int, Query(ge=0, le=1_000_000)] = 0,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> list[IngestJobRead]:
     jobs = await job_repository.list(db, state=state, skip=skip, limit=limit)
