@@ -9,7 +9,7 @@ primary_region = "gru"
   LOG_LEVEL = "INFO"
   OPENROUTER_APP_NAME = "Semantic Document Search"
   OPENROUTER_APP_URL = "https://semantic-document-search.fly.dev"
-  QDRANT_COLLECTION_VERSION = "v1"
+  QDRANT_COLLECTION_VERSION = "v2"
 
 [[mounts]]
   source = "sds_data"
