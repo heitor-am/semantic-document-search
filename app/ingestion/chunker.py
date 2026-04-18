@@ -27,8 +27,8 @@ def _make_chunk_id(source_url: str, parent_index: int, child_index: int | None) 
     return str(uuid5(NAMESPACE_URL, f"{source_url}#p{parent_index}#c{suffix}"))
 
 
-def _section_path(md_metadata: dict[str, str]) -> list[str]:
-    return [md_metadata[h] for h in ("h1", "h2", "h3") if h in md_metadata]
+def _section_path(md_metadata: dict[str, str]) -> tuple[str, ...]:
+    return tuple(md_metadata[h] for h in ("h1", "h2", "h3") if h in md_metadata)
 
 
 def chunk_document(
@@ -50,7 +50,18 @@ def chunk_document(
 
     Sizes are in characters; the plan speaks in tokens (~1024 / ~256) which
     we approximate at ~4 chars/token. Callers can override the defaults.
+
+    Raises:
+        ValueError: if size kwargs are not positive, overlap is negative, or
+            overlap is not strictly smaller than `child_chunk_size`.
     """
+    if parent_chunk_size <= 0 or child_chunk_size <= 0:
+        raise ValueError("chunk sizes must be positive")
+    if child_chunk_overlap < 0:
+        raise ValueError("child_chunk_overlap must be non-negative")
+    if child_chunk_overlap >= child_chunk_size:
+        raise ValueError("child_chunk_overlap must be smaller than child_chunk_size")
+
     if not doc.body_markdown.strip():
         return []
 
@@ -110,7 +121,7 @@ def _build_chunk(
     chunk_id: str,
     parent_chunk_id: str | None,
     content: str,
-    section_path: list[str],
+    section_path: tuple[str, ...],
     chunk_index: int,
 ) -> Chunk:
     return Chunk(
@@ -125,5 +136,5 @@ def _build_chunk(
         title=doc.title,
         author=doc.author,
         published_at=doc.published_at,
-        tags=list(doc.tags),
+        tags=tuple(doc.tags),
     )

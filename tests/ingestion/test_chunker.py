@@ -1,8 +1,10 @@
 from datetime import UTC, datetime
 from typing import Any
 
+import pytest
+
 from app.ingestion.chunker import chunk_document
-from app.ingestion.schemas import SourceDocument
+from app.ingestion.schemas import Chunk, SourceDocument
 
 
 def make_doc(body: str, **overrides: Any) -> SourceDocument:
@@ -53,7 +55,7 @@ class TestChunkDocument:
             child_chunk_overlap=20,
         )
 
-        paths = {tuple(c.section_path) for c in chunks if c.parent_chunk_id is None}
+        paths = {c.section_path for c in chunks if c.parent_chunk_id is None}
         assert ("Top",) in paths
         assert ("Top", "Middle") in paths
         assert ("Top", "Middle", "Deep") in paths
@@ -79,7 +81,7 @@ class TestChunkDocument:
         )
         parents = [c for c in chunks if c.parent_chunk_id is None]
         assert len(parents) == 1
-        assert parents[0].section_path == []
+        assert parents[0].section_path == ()
 
     def test_chunks_carry_document_metadata(self) -> None:
         doc = make_doc("# H\n\nbody")
@@ -89,7 +91,7 @@ class TestChunkDocument:
             assert chunk.title == doc.title
             assert chunk.author == doc.author
             assert chunk.published_at == doc.published_at
-            assert chunk.tags == list(doc.tags)
+            assert chunk.tags == tuple(doc.tags)
 
     def test_char_count_matches_content_length(self) -> None:
         for chunk in chunk_document(make_doc("# H\n\nsome content here")):
@@ -121,8 +123,13 @@ class TestChunkDocument:
         )
         children = [c for c in chunks if c.parent_chunk_id is not None]
         assert len(children) > 1
-        # Indices per parent are sequential from 0
-        assert [c.chunk_index for c in children] == list(range(len(children)))
+        # chunk_index is reset per parent, so group before asserting sequentially.
+        children_by_parent: dict[str, list[Chunk]] = {}
+        for child in children:
+            assert child.parent_chunk_id is not None
+            children_by_parent.setdefault(child.parent_chunk_id, []).append(child)
+        for group in children_by_parent.values():
+            assert [c.chunk_index for c in group] == list(range(len(group)))
 
     def test_child_chunks_respect_size_budget(self) -> None:
         body = "# Big\n\n" + ("word " * 300)
@@ -149,7 +156,7 @@ class TestChunkDocument:
         assert len(parents) > 1
         for parent in parents:
             assert parent.char_count <= 500
-            assert parent.section_path == ["Giant"]
+            assert parent.section_path == ("Giant",)
 
     def test_parent_indexes_are_sequential(self) -> None:
         body = "# A\n\nfirst\n\n## B\n\nsecond\n\n## C\n\nthird"
@@ -161,3 +168,25 @@ class TestChunkDocument:
         )
         parents = [c for c in chunks if c.parent_chunk_id is None]
         assert [p.chunk_index for p in parents] == list(range(len(parents)))
+
+
+class TestChunkDocumentValidation:
+    def test_rejects_non_positive_parent_size(self) -> None:
+        with pytest.raises(ValueError, match="positive"):
+            chunk_document(make_doc("# H\n\nbody"), parent_chunk_size=0)
+
+    def test_rejects_non_positive_child_size(self) -> None:
+        with pytest.raises(ValueError, match="positive"):
+            chunk_document(make_doc("# H\n\nbody"), child_chunk_size=-1)
+
+    def test_rejects_negative_overlap(self) -> None:
+        with pytest.raises(ValueError, match="non-negative"):
+            chunk_document(make_doc("# H\n\nbody"), child_chunk_overlap=-1)
+
+    def test_rejects_overlap_not_smaller_than_child_size(self) -> None:
+        with pytest.raises(ValueError, match="smaller"):
+            chunk_document(
+                make_doc("# H\n\nbody"),
+                child_chunk_size=100,
+                child_chunk_overlap=100,
+            )

@@ -43,8 +43,8 @@ class Chunk(BaseModel):
     )
     content: str
     char_count: int
-    section_path: list[str] = Field(
-        default_factory=list,
+    section_path: tuple[str, ...] = Field(
+        default_factory=tuple,
         description="Ancestor headings (h1 → h3) for the section this chunk belongs to.",
     )
     chunk_index: int = Field(
@@ -59,7 +59,7 @@ class Chunk(BaseModel):
     title: str
     author: str | None = None
     published_at: datetime | None = None
-    tags: list[str] = Field(default_factory=list)
+    tags: tuple[str, ...] = Field(default_factory=tuple)
 
 
 class IngestRequest(BaseModel):
