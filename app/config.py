@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     openrouter_chat_model: str = "openai/gpt-4o-mini"
     openrouter_embedding_model: str = "baai/bge-m3"
+    openrouter_rerank_model: str = "cohere/rerank-v3.5"
     openrouter_app_name: str = "Semantic Document Search"
     openrouter_app_url: str = "http://localhost:8000"
 
