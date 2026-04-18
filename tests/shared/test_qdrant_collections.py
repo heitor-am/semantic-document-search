@@ -70,13 +70,17 @@ class TestEnsureCollection:
         client.create_payload_index.assert_not_awaited()
 
     async def test_passes_vector_size_to_client(self) -> None:
+        from app.shared.qdrant.collections import DENSE_VECTOR_NAME, SPARSE_VECTOR_NAME
+
         client = AsyncMock()
         client.collection_exists = AsyncMock(return_value=False)
 
         await ensure_collection(client, "documents_x_v1", vector_size=768)
 
         _, kwargs = client.create_collection.await_args
-        assert kwargs["vectors_config"].size == 768
+        # Named-vector schema: dense + bm25 sparse.
+        assert kwargs["vectors_config"][DENSE_VECTOR_NAME].size == 768
+        assert SPARSE_VECTOR_NAME in kwargs["sparse_vectors_config"]
 
     async def test_treats_concurrent_create_as_noop(self) -> None:
         # First existence check -> False (we try to create);
