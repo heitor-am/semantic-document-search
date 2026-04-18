@@ -1,6 +1,6 @@
 [project]
 name = "semantic-document-search"
-version = "0.0.1"
+version = "0.1.0"
 description = "Production-grade RAG search: package-by-feature, FSM ingestion, functional retrieval pipeline, Qdrant, OpenRouter"
 readme = "README.md"
 requires-python = ">=3.12"

@@ -9,6 +9,31 @@ from qdrant_client.http.exceptions import UnexpectedResponse
 # Dimensionality of the default embedding model (BAAI/bge-m3).
 BGE_M3_DIM = 1024
 
+# Embedding model → vector dimension. Swapping the embedding model means a
+# new Qdrant collection (ADR-006), so adding a model here should be a
+# deliberate, reviewed change.
+MODEL_VECTOR_SIZES: dict[str, int] = {
+    "baai/bge-m3": BGE_M3_DIM,
+    "openai/text-embedding-3-small": 1536,
+    "openai/text-embedding-3-large": 3072,
+}
+
+
+def vector_size_for(model: str) -> int:
+    """Return the embedding dimension registered for a model.
+
+    Fails loudly on unknown models — silently defaulting would cause a
+    runtime dim mismatch on the first upsert, which is a harder bug to
+    trace back to a config change.
+    """
+    key = model.lower()
+    if key not in MODEL_VECTOR_SIZES:
+        raise ValueError(
+            f"unknown embedding model {model!r}; register its dimension in MODEL_VECTOR_SIZES"
+        )
+    return MODEL_VECTOR_SIZES[key]
+
+
 # Payload fields indexed for filtering/faceting at query time.
 # Keyword indexes accelerate exact-match filters; `tags` is a list but Qdrant
 # indexes each element of an array-valued keyword field.
