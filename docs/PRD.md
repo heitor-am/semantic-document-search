@@ -65,7 +65,7 @@ Each decision below is documented as an ADR.
 | Chat model | `openai/gpt-4o-mini` | Cheap, adequate for query rewriting |
 | Embedding model | `baai/bge-m3` (1024 dims) | Multilingual SOTA open-source |
 | Reranker | `BAAI/bge-reranker-v2-m3` | Cross-encoder, same vendor as embeddings |
-| Parsing | `markdownify` for HTML → Markdown; `docling` reserved for PDFs | dev.to already serves markdown |
+| Parsing | None — dev.to API returns ready-to-ingest markdown | Future HTML/PDF sources would reintroduce a parsing layer |
 | Chunking | `langchain-text-splitters` (MarkdownHeader + Recursive) | Just the splitters, not LangChain the framework |
 | BM25 | `rank-bm25` | Lightweight, fits in-process |
 | State machine | `transitions` | Declarative FSM for ingestion; built-in graphviz |
