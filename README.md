@@ -15,7 +15,35 @@ Production-grade RAG search: package-by-feature, FSM-driven ingestion, functiona
 - **Quality:** Ruff · mypy (strict) · pytest · Schemathesis · bandit · pip-audit
 - **Infra:** Docker · Fly.io · GitHub Actions · Dev Container
 
-## Demo
+## Live deployment
+
+- **Base URL:** https://semantic-document-search.fly.dev
+- **OpenAPI / Scalar docs:** https://semantic-document-search.fly.dev/docs
+- **Health:** https://semantic-document-search.fly.dev/health
+
+Try it:
+
+```bash
+curl "https://semantic-document-search.fly.dev/search?q=replace+Redis+with+Postgres&strategy=hybrid_rerank&top_k=3"
+```
+
+Fly.io auto-stops the machine after idle, so the first call after a quiet period pays a few seconds of cold-start (the FastEmbed BM25 model is baked into the image to avoid the ~50MB download cost).
+
+## Evaluation
+
+32 golden queries (mix of keyword-heavy, paraphrase, and adversarial) replayed against each retrieval strategy. Numbers below are from production, against the same 50-article dev.to corpus loaded into Qdrant Cloud:
+
+| Strategy | P@1 | R@1 | R@3 | R@5 | R@10 | MRR | NDCG@5 | NDCG@10 |
+|---|---|---|---|---|---|---|---|---|
+| `dense_only` | 0.750 | 0.646 | 0.839 | 0.901 | 0.911 | 0.827 | 0.826 | 0.831 |
+| `hybrid` (RRF) | 0.750 | 0.661 | 0.885 | 0.896 | 0.911 | 0.833 | 0.835 | 0.841 |
+| `hybrid_rerank` | **0.844** | **0.740** | 0.865 | 0.896 | 0.911 | **0.878** | **0.863** | **0.869** |
+
+Reranker contributes **+9.4pp on P@1** and **+5.1pp on MRR** over both baselines — consistent with the cross-encoder literature: sharper relevance at the top of the list, where users actually look. R@10 = 0.911 is the indexed-corpus ceiling for this query set; further gains require upstream changes (better chunking, query expansion, more diverse seeds).
+
+Full per-query breakdown: [`docs/eval-results-prod.txt`](docs/eval-results-prod.txt). Re-run with `make eval APP_URL=https://semantic-document-search.fly.dev` (or pass `--app-url` to `app.evaluation.runner`).
+
+## Demo notebook
 
 [`notebooks/pipeline-demo.ipynb`](notebooks/pipeline-demo.ipynb) — end-to-end walkthrough rendered with cell outputs:
 ingestion FSM transitions, the three retrieval strategies side-by-side, and the evaluation summary.

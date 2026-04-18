@@ -51,12 +51,12 @@ migration:
 	uv run alembic revision --autogenerate -m "$(m)"
 
 eval:
-	uv run python -m app.evaluation.runner
+	@APP_URL="$(APP_URL)" bash -c 'uv run python -m app.evaluation.runner $${APP_URL:+--app-url "$$APP_URL"}'
 
 eval-save:
 	# pipefail so tee doesn't mask the runner's exit code — regressions
-	# must bubble up to CI / local shells.
-	bash -o pipefail -c 'uv run python -m app.evaluation.runner | tee docs/eval-results.txt'
+	# must bubble up to CI / local shells. APP_URL=https://... targets prod.
+	@APP_URL="$(APP_URL)" bash -o pipefail -c 'uv run python -m app.evaluation.runner $${APP_URL:+--app-url "$$APP_URL"} | tee docs/eval-results.txt'
 
 smoke:
 	uv run python scripts/smoke_ingestion.py "$(URL)"
