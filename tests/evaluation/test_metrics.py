@@ -67,6 +67,14 @@ class TestPrecisionAtK:
         with pytest.raises(ValueError):
             precision_at_k(["a"], ["a"], k=0)
 
+    def test_duplicates_in_retrieved_do_not_inflate_numerator(self) -> None:
+        # Runner dedups before calling, but the metric itself must be
+        # consistent with recall_at_k (which set()'s top-k). Two copies
+        # of the same relevant doc in slots 1-2 is precision 1/2, not 1.
+        assert precision_at_k(["a", "a"], ["a"], k=2) == 0.5
+        # Single relevant doc mixed with duplicates still penalised.
+        assert precision_at_k(["a", "a", "b"], ["a"], k=3) == pytest.approx(1 / 3)
+
 
 class TestReciprocalRank:
     def test_first_result_relevant(self) -> None:
