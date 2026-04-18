@@ -55,7 +55,7 @@ class TestEncodeBm25Sparse:
         # in the hash function (which would break on-disk points) is loud.
         import hashlib
 
-        expected = int.from_bytes(hashlib.md5(b"python").digest()[:4], "big")
+        expected = int.from_bytes(hashlib.md5(b"python", usedforsecurity=False).digest()[:4], "big")
         assert indices[0] == expected
 
     def test_indices_and_values_same_length(self) -> None:

@@ -34,8 +34,17 @@ def tokenize(text: str) -> list[str]:
 
 
 def _stable_hash_32(token: str) -> int:
-    """32-bit deterministic token → index."""
-    return int.from_bytes(hashlib.md5(token.encode("utf-8")).digest()[:4], "big")
+    """32-bit deterministic token → index.
+
+    `usedforsecurity=False` flags this to bandit / CWE-327 as a
+    non-security use: collisions are tolerable (they merge two tokens'
+    contributions), and we're not authenticating anything — we're just
+    hashing strings into a fixed-width index space that Qdrant stores.
+    """
+    return int.from_bytes(
+        hashlib.md5(token.encode("utf-8"), usedforsecurity=False).digest()[:4],
+        "big",
+    )
 
 
 def encode_bm25_sparse(text: str) -> tuple[list[int], list[float]]:
