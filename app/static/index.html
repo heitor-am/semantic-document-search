@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semantic Document Search</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; max-width: 760px; margin: 4rem auto; padding: 0 1.5rem; line-height: 1.6; }
+  h1 { margin-bottom: 0.25rem; }
+  .tag { color: #888; font-size: 0.95rem; }
+  .links { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+  .links a { padding: 0.5rem 1rem; border: 1px solid currentColor; border-radius: 8px; text-decoration: none; color: inherit; }
+  .links a:hover { background: #0001; }
+  ul { padding-left: 1.25rem; }
+  code { background: #8881; padding: 0.1rem 0.35rem; border-radius: 4px; }
+</style>
+</head>
+<body>
+  <h1>Semantic Document Search</h1>
+  <p class="tag">Production-grade RAG: FSM-driven ingestion, hybrid retrieval (BM25 + dense), cross-encoder reranking, parent-child resolution. Qdrant + OpenRouter.</p>
+
+  <div class="links">
+    <a href="/docs">📚 API Docs (Scalar)</a>
+    <a href="/openapi.json">OpenAPI Spec</a>
+    <a href="/health">Health</a>
+  </div>
+
+  <h2>Architecture highlights</h2>
+  <ul>
+    <li><strong>Package-by-feature</strong> — <code>ingestion/</code>, <code>retrieval/</code>, <code>evaluation/</code>, <code>shared/</code></li>
+    <li><strong>Finite State Machine</strong> on ingestion (<code>transitions</code> lib)</li>
+    <li><strong>Functional Pipeline</strong> on retrieval with graceful degradation</li>
+    <li><strong>Evaluation framework</strong> — recall@k, MRR, NDCG against a golden set</li>
+  </ul>
+</body>
+</html>
