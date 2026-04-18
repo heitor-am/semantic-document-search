@@ -1,0 +1,42 @@
+---
+Ingestion Pipeline State Machine
+---
+stateDiagram-v2
+  direction LR
+  classDef s_default fill:white,color:black
+  classDef s_inactive fill:white,color:black
+  classDef s_parallel color:black,fill:white
+  classDef s_active color:red,fill:darksalmon
+  classDef s_previous color:blue,fill:azure
+  
+  state "pending" as pending
+  Class pending s_active
+  state "fetching" as fetching
+  Class fetching s_default
+  state "parsing" as parsing
+  Class parsing s_default
+  state "chunking" as chunking
+  Class chunking s_default
+  state "embedding" as embedding
+  Class embedding s_default
+  state "indexing" as indexing
+  Class indexing s_default
+  state "completed" as completed
+  Class completed s_default
+  state "failed" as failed
+  Class failed s_default
+  
+  pending --> fetching: start_fetch
+  pending --> failed: fail
+  fetching --> parsing: start_parse
+  fetching --> failed: fail
+  parsing --> chunking: start_chunk
+  parsing --> failed: fail
+  chunking --> embedding: start_embed
+  chunking --> failed: fail
+  embedding --> indexing: start_index
+  embedding --> failed: fail
+  indexing --> completed: complete
+  indexing --> failed: fail
+  failed --> pending: retry
+  [*] --> pending
