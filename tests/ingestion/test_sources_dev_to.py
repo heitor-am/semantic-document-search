@@ -36,6 +36,15 @@ class TestParseDevToUrl:
         with pytest.raises(InvalidDevToUrlError, match=r"dev\.to"):
             parse_dev_to_url("https://medium.com/user/post")
 
+    def test_rejects_lookalike_domain_ending_in_dev_to(self) -> None:
+        # `evildev.to` must not pass — endswith('dev.to') would accept it
+        with pytest.raises(InvalidDevToUrlError):
+            parse_dev_to_url("https://evildev.to/user/slug")
+
+    def test_accepts_explicit_port(self) -> None:
+        # hostname() strips the port, so dev.to:443 is still a valid host
+        assert parse_dev_to_url("https://dev.to:443/user/slug") == "user/slug"
+
     def test_rejects_wrong_path_depth(self) -> None:
         with pytest.raises(InvalidDevToUrlError, match="path"):
             parse_dev_to_url("https://dev.to/just-one-segment")

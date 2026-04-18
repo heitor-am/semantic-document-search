@@ -17,7 +17,11 @@ class InvalidDevToUrlError(ValueError):
 def parse_dev_to_url(url: str) -> str:
     """Given a dev.to article URL, return the 'username/slug' API path."""
     parsed = urlparse(url)
-    if not parsed.netloc.endswith("dev.to"):
+
+    # Use hostname (strips port) and match exact/subdomain only — 'evildev.to'
+    # or similar lookalike domains are rejected even though they end with 'dev.to'.
+    hostname = parsed.hostname
+    if hostname is None or (hostname != "dev.to" and not hostname.endswith(".dev.to")):
         raise InvalidDevToUrlError(f"not a dev.to URL: {url!r}")
 
     parts = [p for p in parsed.path.split("/") if p]

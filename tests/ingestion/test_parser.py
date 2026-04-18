@@ -28,6 +28,11 @@ class TestNormalizeMarkdown:
     def test_strips_leading_and_trailing_whitespace(self) -> None:
         assert normalize_markdown("\n\n  body  \n\n") == "body"
 
+    def test_strips_front_matter_without_trailing_newline(self) -> None:
+        # Document that ends immediately after the closing --- delimiter still
+        # has its front-matter removed.
+        assert normalize_markdown("---\ntitle: X\n---") == ""
+
     def test_is_idempotent(self) -> None:
         text = "---\nmeta\n---\n\n# Body\r\n\r\n\r\n\r\nmore\n\n\n"
         once = normalize_markdown(text)

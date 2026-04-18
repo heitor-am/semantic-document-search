@@ -1,6 +1,6 @@
 import re
 
-_FRONT_MATTER_RE = re.compile(r"^---\s*\n.*?\n---\s*\n", re.DOTALL)
+_FRONT_MATTER_RE = re.compile(r"^---\s*\n.*?\n---\s*(?:\n|\Z)", re.DOTALL)
 _MULTI_BLANK_RE = re.compile(r"\n{3,}")
 
 
