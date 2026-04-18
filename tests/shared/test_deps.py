@@ -17,13 +17,9 @@ def _request_with_state(**attrs) -> MagicMock:
 
 class TestGetHttpxClient:
     def test_returns_client_from_app_state(self) -> None:
-        client = httpx.AsyncClient()
-        try:
-            request = _request_with_state(httpx_client=client)
-            assert get_httpx_client(request) is client
-        finally:
-            # No await in sync test; close the underlying transport synchronously.
-            pass
+        client = MagicMock(spec=httpx.AsyncClient)
+        request = _request_with_state(httpx_client=client)
+        assert get_httpx_client(request) is client
 
 
 class TestGetOpenAIClient:

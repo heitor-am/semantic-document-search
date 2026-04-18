@@ -16,7 +16,7 @@ from app.shared.api.routers import health
 from app.shared.core.exceptions import AppError, app_error_handler, validation_exception_handler
 from app.shared.core.logging import RequestIdMiddleware, configure_logging
 from app.shared.qdrant.client import get_qdrant_client
-from app.shared.qdrant.collections import BGE_M3_DIM, ensure_collection
+from app.shared.qdrant.collections import ensure_collection, vector_size_for
 from app.shared.qdrant.repository import QdrantRepository
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -38,7 +38,8 @@ async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
     if settings.qdrant_url:
         qdrant = get_qdrant_client()
         collection = current_collection_name()
-        await ensure_collection(qdrant, collection, vector_size=BGE_M3_DIM)
+        vector_size = vector_size_for(settings.openrouter_embedding_model)
+        await ensure_collection(qdrant, collection, vector_size=vector_size)
         app.state.qdrant_client = qdrant
         app.state.vector_repo = QdrantRepository(qdrant, collection=collection)
 

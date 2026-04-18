@@ -96,13 +96,17 @@ async def start_ingestion(
         if existing.state in _IN_PROGRESS_STATES:
             return _to_read(existing, await job_repository.get_transitions(db, job_id))
         # FAILED — reset so the fresh IngestJobFSM(initial=PENDING) matches
-        # the DB state, then re-run.
+        # the DB state, then re-run. Clear the stale error from the previous
+        # failure so /ingest/jobs/{id} stops reporting it mid-retry.
         await job_repository.record_transition(
             db,
             job_id=job_id,
             from_state=existing.state,
             to_state=JobState.PENDING,
         )
+        await db.refresh(existing)
+        existing.error = None
+        await db.commit()
         await db.refresh(existing)
         job = existing
     else:

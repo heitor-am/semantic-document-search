@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
@@ -53,15 +53,19 @@ def make_fake_openai(vector_size: int = 1024) -> MagicMock:
 
 
 @pytest.fixture
-def client_bundle(test_session_maker, monkeypatch) -> Iterator[dict[str, Any]]:
+async def client_bundle(test_session_maker, monkeypatch) -> AsyncIterator[dict[str, Any]]:
     """Spin up a TestClient with fake Qdrant/OpenAI and an in-memory DB.
 
     Returns a bag with `client`, `vector_repo`, `openai_client` so each test
     can poke at them. Background tasks run inside TestClient — when the call
     returns, the ingestion has already executed end-to-end.
+
+    One httpx.AsyncClient is created per fixture and closed at teardown so
+    the transport is never leaked.
     """
     vector_repo = FakeVectorRepo()
     openai_client = make_fake_openai()
+    httpx_client = httpx.AsyncClient()
 
     # Point the router's BackgroundTasks session_maker at the test DB so the
     # task running after the response uses the same :memory: SQLite.
@@ -76,14 +80,17 @@ def client_bundle(test_session_maker, monkeypatch) -> Iterator[dict[str, Any]]:
     app.dependency_overrides[get_db] = override_db
     app.dependency_overrides[get_vector_repo] = lambda: vector_repo
     app.dependency_overrides[get_openai_client] = lambda: openai_client
-    app.dependency_overrides[get_httpx_client] = lambda: httpx.AsyncClient()
+    app.dependency_overrides[get_httpx_client] = lambda: httpx_client
 
-    with TestClient(app) as client:
-        yield {
-            "client": client,
-            "vector_repo": vector_repo,
-            "openai_client": openai_client,
-        }
+    try:
+        with TestClient(app) as client:
+            yield {
+                "client": client,
+                "vector_repo": vector_repo,
+                "openai_client": openai_client,
+            }
+    finally:
+        await httpx_client.aclose()
 
 
 SAMPLE_URL = "https://dev.to/author/great-post-abc"
@@ -145,6 +152,22 @@ class TestPostIngest:
         job_id = response.json()["job_id"]
         detail = client_bundle["client"].get(f"/ingest/jobs/{job_id}")
         assert detail.json()["state"] == "failed"
+
+    def test_retry_of_failed_job_clears_stale_error(self, client_bundle, respx_mock) -> None:
+        # First POST: non-dev.to URL lands the job in FAILED with an error.
+        fail_url = "https://medium.com/u/post"
+        first = client_bundle["client"].post("/ingest", json={"source_url": fail_url})
+        job_id = first.json()["job_id"]
+        assert client_bundle["client"].get(f"/ingest/jobs/{job_id}").json()["error"]
+
+        # Second POST: retry is scheduled. In the transient 202 response the
+        # job is back at PENDING and the stale error from the previous failure
+        # must be gone — before this fix, record_transition preserved it.
+        retry = client_bundle["client"].post("/ingest", json={"source_url": fail_url})
+        assert retry.status_code == 202
+        retry_body = retry.json()
+        assert retry_body["state"] == "pending"
+        assert retry_body["error"] is None
 
 
 class TestGetJob:

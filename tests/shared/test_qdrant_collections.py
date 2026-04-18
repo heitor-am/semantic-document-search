@@ -7,6 +7,7 @@ from app.shared.qdrant.collections import (
     BGE_M3_DIM,
     collection_name_for,
     ensure_collection,
+    vector_size_for,
 )
 
 
@@ -111,3 +112,18 @@ class TestEnsureCollection:
 )
 def test_collection_name_table(model: str, version: str, expected: str) -> None:
     assert collection_name_for(model, version) == expected
+
+
+class TestVectorSizeFor:
+    def test_returns_1024_for_bge_m3(self) -> None:
+        assert vector_size_for("baai/bge-m3") == BGE_M3_DIM
+
+    def test_is_case_insensitive(self) -> None:
+        assert vector_size_for("BAAI/BGE-M3") == BGE_M3_DIM
+
+    def test_returns_1536_for_openai_3_small(self) -> None:
+        assert vector_size_for("openai/text-embedding-3-small") == 1536
+
+    def test_raises_on_unknown_model(self) -> None:
+        with pytest.raises(ValueError, match="unknown embedding model"):
+            vector_size_for("anthropic/voyage-3")
