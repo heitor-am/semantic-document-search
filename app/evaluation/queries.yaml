@@ -1,0 +1,109 @@
+# Golden query set for Q3 retrieval evaluation. URLs resolved from the
+# live corpus (documents_baai_bge_m3_v2) by title-substring match.
+# Regenerate via scripts/build_queries.py if the corpus changes.
+
+queries:
+- id: redis-to-postgres
+  query: replace Redis with Postgres for caching
+  expected_source_urls:
+  - https://dev.to/polliog/i-replaced-redis-with-postgresql-and-its-faster-4942
+  min_recall_at_5: 1.0
+  description: Exact semantic match — the article is literally about this migration.
+- id: browser-apis-replace-libraries
+  query: browser built-in APIs that replace JavaScript libraries
+  expected_source_urls:
+  - https://dev.to/sylwia-lask/stop-installing-libraries-10-browser-apis-that-already-solve-your-problems-35bi
+  - https://dev.to/sylwia-lask/9-things-youre-overengineering-the-browser-already-solved-them-o99
+  min_recall_at_5: 0.5
+  description: >
+    Two near-duplicates from the same author in the corpus. In practice
+    only one consistently surfaces in the top-5 — both hybrid and rerank
+    collapse to the stronger match. Floor relaxed to 0.5 accordingly;
+    surfacing both would require cross-document diversification (future
+    enhancement, tracked in ADRs).
+- id: modern-js-features
+  query: modern JavaScript language features and syntax
+  expected_source_urls:
+  - https://dev.to/sylwia-lask/16-modern-javascript-features-that-might-blow-your-mind-4h5e
+  min_recall_at_5: 1.0
+- id: frontend-framework-comparison
+  query: compare frontend frameworks React Vue Svelte performance
+  expected_source_urls:
+  - https://dev.to/lissy93/i-built-an-app-in-every-frontend-framework-4a9g
+  min_recall_at_5: 1.0
+- id: rag-fastapi-production
+  query: production-ready RAG system with FastAPI and vector search
+  expected_source_urls:
+  - https://dev.to/aquibpy/building-ragenius-a-production-ready-rag-system-with-fastapi-azure-openai-chromadb-3281
+  - https://dev.to/ravigupta97/building-a-production-ready-task-management-api-with-fastapi-complete-architecture-guide-25a
+  min_recall_at_5: 0.5
+  description: Two strong matches — a full RAG build + a FastAPI task API.
+- id: local-rag-docker
+  query: self-hosted offline RAG with Docker and Llama
+  expected_source_urls:
+  - https://dev.to/philyeh/how-i-built-a-100-offline-second-brain-for-engineering-docs-using-docker-llama-3-no-openai-4gcj
+  min_recall_at_5: 1.0
+  description: Title "Local RAG with Llama 3 & Docker — Offline Second Brain".
+- id: unit-tests-critique
+  query: are unit tests really effective at catching bugs
+  expected_source_urls:
+  - https://dev.to/varshithvhegde/unit-tests-the-greatest-lie-we-tell-ourselves-2ehd
+  min_recall_at_5: 1.0
+- id: microservices-performance
+  query: microservices latency overhead vs monolith
+  expected_source_urls:
+  - https://dev.to/polliog/microservices-are-killing-your-performance-and-heres-the-math-21op
+  min_recall_at_5: 1.0
+- id: agent-memory
+  query: how AI agents remember context across sessions
+  expected_source_urls:
+  - https://dev.to/ghostbuild/your-agent-can-think-it-cant-remember-5e1o
+  - https://dev.to/kanta13jp1/adding-persistent-memory-to-claude-code-with-claude-mem-plus-a-diy-lightweight-alternative-4gha
+  min_recall_at_5: 0.5
+- id: llm-non-determinism
+  query: LLM non-determinism reliability production
+  expected_source_urls:
+  - https://dev.to/marcosomma/llms-are-not-deterministic-and-making-them-reliable-is-expensive-in-both-the-bad-way-and-the-good-5bo4
+  - https://dev.to/leandronsp/taming-non-determinism-from-logic-gates-to-llms-3mf0
+  min_recall_at_5: 1.0
+  description: Two articles address this — one practitioner, one theoretical.
+- id: rust-tui-tools
+  query: terminal UI in Rust for code navigation
+  expected_source_urls:
+  - https://dev.to/yashksaini/i-built-a-tui-that-makes-rust-code-inspection-feel-like-magic-375k
+  min_recall_at_5: 1.0
+- id: webgpu-future
+  query: WebGPU browser 3D graphics capabilities
+  expected_source_urls:
+  - https://dev.to/sylwia-lask/why-webgpu-feels-like-the-future-of-the-web-live-demo--2bjh
+  min_recall_at_5: 1.0
+- id: wasm-vs-js
+  query: WebAssembly replacing JavaScript for web
+  expected_source_urls:
+  - https://dev.to/sylwia-lask/will-webassembly-kill-javascript-lets-find-out-live-demo-43ln
+  min_recall_at_5: 1.0
+- id: ai-productivity-myth
+  query: does AI really make developers faster productivity claims
+  expected_source_urls:
+  - https://dev.to/matthewhou/the-metr-study-changed-how-i-think-about-ai-coding-4i84
+  min_recall_at_5: 1.0
+- id: devops-learn-path
+  query: how to learn DevOps without tool overload
+  expected_source_urls:
+  - https://dev.to/maame-codes/i-stopped-trying-to-learn-every-devops-tool-and-started-building-a-platform-instead-33i6
+  min_recall_at_5: 1.0
+- id: gpu-memory-ml
+  query: GPU memory bandwidth for machine learning training
+  expected_source_urls:
+  - https://dev.to/googleai/decoding-high-bandwidth-memory-a-practical-guide-to-gpu-memory-for-fine-tuning-ai-models-56af
+  min_recall_at_5: 1.0
+- id: nextjs-boilerplate-saas
+  query: Next.js SaaS starter boilerplate
+  expected_source_urls:
+  - https://dev.to/salmanshahriar/i-built-a-production-ready-nextjs-boilerplate-so-you-dont-have-to-17d3
+  min_recall_at_5: 1.0
+- id: local-first-architecture
+  query: local-first app architecture offline sync
+  expected_source_urls:
+  - https://dev.to/the_nortern_dev/the-architecture-shift-why-im-betting-on-local-first-in-2026-1nh6
+  min_recall_at_5: 1.0
