@@ -6,7 +6,8 @@ import pytest
 from app.ingestion.chunker import chunk_document
 from app.ingestion.indexer import _chunk_to_point, index_chunks
 from app.ingestion.schemas import Chunk, SourceDocument
-from app.shared.qdrant.repository import VectorPoint
+from app.shared.qdrant.collections import DENSE_VECTOR_NAME, SPARSE_VECTOR_NAME
+from app.shared.qdrant.repository import SparseValue, VectorPoint
 
 
 class FakeVectorRepo:
@@ -122,7 +123,21 @@ class TestChunkToPoint:
         assert point.payload["section_path"] == ["A", "B"]
         assert point.payload["tags"] == ["rag", "ai"]
 
-    def test_vector_and_id_pass_through(self) -> None:
+    def test_id_and_dense_vector_pass_through(self) -> None:
         point = _chunk_to_point(make_chunk(chunk_id="xyz"), [0.5, 0.5, 0.5])
         assert point.id == "xyz"
-        assert list(point.vector) == [0.5, 0.5, 0.5]
+        assert list(point.vectors[DENSE_VECTOR_NAME]) == [0.5, 0.5, 0.5]
+
+    def test_sparse_bm25_vector_produced_for_tokenisable_content(self) -> None:
+        point = _chunk_to_point(make_chunk(content="python async programming"), [0.5])
+        assert SPARSE_VECTOR_NAME in point.vectors
+        sparse = point.vectors[SPARSE_VECTOR_NAME]
+        assert isinstance(sparse, SparseValue)
+        assert len(sparse.indices) == 3  # 3 distinct tokens
+        assert list(sparse.values) == [1.0, 1.0, 1.0]  # each appears once
+
+    def test_sparse_vector_omitted_for_empty_content(self) -> None:
+        # Content with no tokens (pure punctuation) → dense-only point.
+        point = _chunk_to_point(make_chunk(content="!!! ???"), [0.5])
+        assert SPARSE_VECTOR_NAME not in point.vectors
+        assert DENSE_VECTOR_NAME in point.vectors

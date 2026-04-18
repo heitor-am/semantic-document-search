@@ -22,7 +22,10 @@ class Settings(BaseSettings):
     # Qdrant
     qdrant_url: str = ""
     qdrant_api_key: str = ""
-    qdrant_collection_version: str = "v1"
+    # v2: named-vector schema (dense + bm25 sparse) for Qdrant native hybrid.
+    # v1 was single-unnamed-dense and is incompatible; bump requires a
+    # re-ingest into the new collection.
+    qdrant_collection_version: str = "v2"
 
     git_sha: str = "dev"
 

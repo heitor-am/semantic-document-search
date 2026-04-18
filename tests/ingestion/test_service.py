@@ -86,7 +86,10 @@ class TestCurrentCollectionName:
     def test_returns_valid_collection_name(self) -> None:
         name = current_collection_name()
         assert name.startswith("documents_")
-        assert name.endswith("_v1")
+        # v2 is the current default (named-vector schema); assert the
+        # shape, not the literal version, so bumps don't require churn
+        # across unrelated tests.
+        assert name.split("_")[-1].startswith("v")
 
 
 class TestRunIngestion:

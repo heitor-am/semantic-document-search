@@ -6,6 +6,12 @@ from qdrant_client import AsyncQdrantClient
 from qdrant_client.http import models
 from qdrant_client.http.exceptions import UnexpectedResponse
 
+# Named vectors used across the codebase. Keeping these as module-level
+# constants means indexer, retrieval, and collection-creation can never
+# drift on the spelling.
+DENSE_VECTOR_NAME = "dense"
+SPARSE_VECTOR_NAME = "bm25"
+
 # Dimensionality of the default embedding model (BAAI/bge-m3).
 BGE_M3_DIM = 1024
 
@@ -82,6 +88,16 @@ async def ensure_collection(
 ) -> bool:
     """Create the collection + payload indexes if missing. Returns True if created.
 
+    The schema provisions two **named vectors** on every point:
+      - `dense` (float32) — the chunk embedding used for semantic search.
+      - `bm25` (sparse) — the BM25 term-frequency vector; Qdrant applies
+        IDF server-side via the `modifier=IDF` setting, so the ingestor
+        just ships raw term frequencies.
+
+    Pairing them on the same point means a single server-side hybrid
+    query (Query API + FusionQuery) can fuse them in one round-trip,
+    instead of the app holding a duplicate BM25 corpus in memory.
+
     Idempotent under concurrent callers: if a racing worker creates the
     collection between our `collection_exists` check and `create_collection`,
     the second caller observes the conflict, re-verifies existence, and
@@ -92,7 +108,14 @@ async def ensure_collection(
     try:
         await client.create_collection(
             collection_name=name,
-            vectors_config=models.VectorParams(size=vector_size, distance=distance),
+            vectors_config={
+                DENSE_VECTOR_NAME: models.VectorParams(size=vector_size, distance=distance),
+            },
+            sparse_vectors_config={
+                SPARSE_VECTOR_NAME: models.SparseVectorParams(
+                    modifier=models.Modifier.IDF,
+                ),
+            },
         )
     except (UnexpectedResponse, ValueError):
         # Race: another worker created the collection. If it's really there

@@ -7,11 +7,24 @@ from typing import Any, Protocol
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.http import models
 
+from app.shared.qdrant.collections import DENSE_VECTOR_NAME, SPARSE_VECTOR_NAME
+
+
+@dataclass(frozen=True)
+class SparseValue:
+    indices: Sequence[int]
+    values: Sequence[float]
+
 
 @dataclass(frozen=True)
 class VectorPoint:
+    """A point to upsert. `vectors` is a dict of named vectors, where each
+    value is either a dense sequence (list[float]) or a SparseValue. Points
+    are allowed to ship only some of the named vectors — a chunk whose
+    content tokenises to nothing carries only the dense vector."""
+
     id: str
-    vector: Sequence[float]
+    vectors: Mapping[str, Sequence[float] | SparseValue]
     payload: Mapping[str, Any]
 
 
@@ -28,13 +41,20 @@ class VectorRepository(Protocol):
 
     async def upsert(self, points: Sequence[VectorPoint]) -> None: ...
 
-    async def search(
+    async def search_hybrid(
         self,
-        query_vector: Sequence[float],
         *,
+        dense_vector: Sequence[float],
+        sparse: SparseValue | None,
         k: int = 10,
+        prefetch_limit: int | None = None,
         filters: Mapping[str, Any] | None = None,
-    ) -> list[VectorHit]: ...
+    ) -> list[VectorHit]:
+        """Server-side hybrid query: dense + (optional) sparse prefetches,
+        RRF fusion, returns top-k. `prefetch_limit` controls how many
+        candidates each prefetch returns before fusion; defaults to 4 * k.
+        `sparse=None` collapses to a pure dense query."""
+        ...
 
     async def scroll(
         self,
@@ -42,11 +62,7 @@ class VectorRepository(Protocol):
         filters: Mapping[str, Any] | None = None,
         limit: int = 256,
         offset: Any = None,
-    ) -> tuple[list[VectorHit], Any]:
-        """Paginated iteration over payloads without vectors. The returned
-        offset is opaque — pass it back verbatim to fetch the next page;
-        `None` signals the end."""
-        ...
+    ) -> tuple[list[VectorHit], Any]: ...
 
     async def delete_by_source(self, source_url: str) -> None: ...
 
@@ -66,23 +82,56 @@ class QdrantRepository:
         if not points:
             return
         qdrant_points = [
-            models.PointStruct(id=p.id, vector=list(p.vector), payload=dict(p.payload))
+            models.PointStruct(
+                id=p.id,
+                vector={name: _to_qdrant_vector(v) for name, v in p.vectors.items()},
+                payload=dict(p.payload),
+            )
             for p in points
         ]
         await self._client.upsert(collection_name=self._collection, points=qdrant_points)
 
-    async def search(
+    async def search_hybrid(
         self,
-        query_vector: Sequence[float],
         *,
+        dense_vector: Sequence[float],
+        sparse: SparseValue | None,
         k: int = 10,
+        prefetch_limit: int | None = None,
         filters: Mapping[str, Any] | None = None,
     ) -> list[VectorHit]:
+        # Explicit None check so a caller passing prefetch_limit=0 (e.g.
+        # to disable a branch) doesn't silently get the default.
+        if prefetch_limit is None:
+            prefetch_limit = k * 4
+        qdrant_filter = _build_filter(filters) if filters else None
+
+        prefetch: list[models.Prefetch] = [
+            models.Prefetch(
+                query=list(dense_vector),
+                using=DENSE_VECTOR_NAME,
+                limit=prefetch_limit,
+                filter=qdrant_filter,
+            ),
+        ]
+        if sparse is not None and sparse.indices:
+            prefetch.append(
+                models.Prefetch(
+                    query=models.SparseVector(
+                        indices=list(sparse.indices),
+                        values=list(sparse.values),
+                    ),
+                    using=SPARSE_VECTOR_NAME,
+                    limit=prefetch_limit,
+                    filter=qdrant_filter,
+                )
+            )
+
         response = await self._client.query_points(
             collection_name=self._collection,
-            query=list(query_vector),
+            prefetch=prefetch,
+            query=models.FusionQuery(fusion=models.Fusion.RRF),
             limit=k,
-            query_filter=_build_filter(filters) if filters else None,
             with_payload=True,
         )
         return [
@@ -120,6 +169,14 @@ class QdrantRepository:
             ),
         )
         await self._client.delete(collection_name=self._collection, points_selector=selector)
+
+
+def _to_qdrant_vector(
+    value: Sequence[float] | SparseValue,
+) -> list[float] | models.SparseVector:
+    if isinstance(value, SparseValue):
+        return models.SparseVector(indices=list(value.indices), values=list(value.values))
+    return list(value)
 
 
 def _build_filter(filters: Mapping[str, Any]) -> models.Filter:

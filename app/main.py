@@ -11,7 +11,6 @@ from app import __version__
 from app.config import get_settings
 from app.ingestion import router as ingestion_router
 from app.ingestion.service import current_collection_name
-from app.retrieval.bm25_index import BM25Index
 from app.shared.ai.client import get_openrouter_client
 from app.shared.api.routers import health
 from app.shared.core.exceptions import AppError, app_error_handler, validation_exception_handler
@@ -33,11 +32,11 @@ async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
 
     # Qdrant is optional in local dev. When unset, ingestion endpoints return
     # 503 via get_vector_repo; the rest of the app (health, landing) still
-    # boots normally. BM25 index is always initialised (empty-safe) so the
-    # retrieval pipeline doesn't have to guard against a missing attribute.
+    # boots normally. BM25 is stored as a sparse vector on the same points
+    # as the dense embedding (Qdrant native hybrid), so there's no in-app
+    # corpus to warm up.
     app.state.qdrant_client = None
     app.state.vector_repo = None
-    app.state.bm25_index = BM25Index()
     if settings.qdrant_url:
         qdrant = get_qdrant_client()
         collection = current_collection_name()
@@ -45,11 +44,6 @@ async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
         await ensure_collection(qdrant, collection, vector_size=vector_size)
         app.state.qdrant_client = qdrant
         app.state.vector_repo = QdrantRepository(qdrant, collection=collection)
-        # Warm the BM25 index once at boot by scanning existing children.
-        # Cheap at MVP scale; ADR-007 covers pickle-on-disk when the corpus
-        # outgrows this. New ingestions during the app's lifetime are not
-        # folded in yet (Etapa 9 scope) — restart the app to refresh.
-        await app.state.bm25_index.rebuild(app.state.vector_repo)
 
     # OpenRouter client — also optional locally.
     app.state.openai_client = get_openrouter_client() if settings.openrouter_api_key else None
