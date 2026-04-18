@@ -15,6 +15,14 @@ Production-grade RAG search: package-by-feature, FSM-driven ingestion, functiona
 - **Quality:** Ruff · mypy (strict) · pytest · Schemathesis · bandit · pip-audit
 - **Infra:** Docker · Fly.io · GitHub Actions · Dev Container
 
+## Demo
+
+[`notebooks/pipeline-demo.ipynb`](notebooks/pipeline-demo.ipynb) — end-to-end walkthrough rendered with cell outputs:
+ingestion FSM transitions, the three retrieval strategies side-by-side, and the evaluation summary.
+GitHub renders it inline. To re-execute locally: `make migrate` (one-time SQLite schema), `make dev`
+(uvicorn in another terminal), and — to reproduce the retrieval examples — `make seed` to load the
+50-article corpus into Qdrant. Then open the notebook in Jupyter.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
