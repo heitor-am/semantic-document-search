@@ -23,6 +23,13 @@ COPY alembic ./alembic
 
 RUN uv sync --frozen --no-dev || uv sync --no-dev
 
+# Pre-warm FastEmbed's Qdrant/bm25 model into a known cache dir so the
+# runtime stage gets the ~50MB download baked into the image. Without
+# this, the first /search or /ingest call after a Fly cold-start would
+# block ~10s while the model downloads.
+ENV FASTEMBED_CACHE_DIR=/app/.fastembed-cache
+RUN /app/.venv/bin/python -c "from fastembed import SparseTextEmbedding; SparseTextEmbedding(model_name='Qdrant/bm25', cache_dir='/app/.fastembed-cache')"
+
 # ---------- Runtime stage ----------
 FROM python:${PYTHON_VERSION}-slim AS runtime
 
@@ -30,7 +37,8 @@ ARG GIT_SHA
 ENV GIT_SHA=${GIT_SHA} \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    FASTEMBED_CACHE_DIR=/app/.fastembed-cache
 
 WORKDIR /app
 

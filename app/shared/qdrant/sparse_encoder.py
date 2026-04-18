@@ -25,6 +25,8 @@ Trade-offs:
 
 from __future__ import annotations
 
+import os
+
 from fastembed import SparseTextEmbedding
 
 _MODEL_NAME = "Qdrant/bm25"
@@ -38,7 +40,14 @@ _model: SparseTextEmbedding | None = None
 def _get_model() -> SparseTextEmbedding:
     global _model
     if _model is None:
-        _model = SparseTextEmbedding(model_name=_MODEL_NAME)
+        # FASTEMBED_CACHE_DIR pins the model location so the Docker build
+        # can pre-warm into a known path that the runtime stage inherits.
+        # Unset → FastEmbed falls back to ~/.cache/fastembed (local dev).
+        cache_dir = os.environ.get("FASTEMBED_CACHE_DIR")
+        if cache_dir:
+            _model = SparseTextEmbedding(model_name=_MODEL_NAME, cache_dir=cache_dir)
+        else:
+            _model = SparseTextEmbedding(model_name=_MODEL_NAME)
     return _model
 
 

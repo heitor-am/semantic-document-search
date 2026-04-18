@@ -32,6 +32,7 @@ Exit code: 0 if every URL completed, 1 if any failed.
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import sys
 from pathlib import Path
@@ -41,7 +42,7 @@ import httpx
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-APP_URL = "http://127.0.0.1:8000"
+DEFAULT_APP_URL = "http://127.0.0.1:8000"
 POLL_TIMEOUT_S = 90  # bge-m3 embed + rerank call for ~25 chunks per post
 POLL_INTERVAL_S = 1.0
 
@@ -56,10 +57,12 @@ def read_urls(path: Path) -> list[str]:
     return urls
 
 
-async def ingest_one(client: httpx.AsyncClient, url: str) -> tuple[str, str, str | None]:
+async def ingest_one(
+    client: httpx.AsyncClient, app_url: str, url: str
+) -> tuple[str, str, str | None]:
     """Returns (state, job_id, error)."""
     try:
-        r = await client.post(f"{APP_URL}/ingest", json={"source_url": url}, timeout=15.0)
+        r = await client.post(f"{app_url}/ingest", json={"source_url": url}, timeout=15.0)
     except httpx.RequestError as exc:
         return ("failed", "-", f"POST failed: {exc}")
     if r.status_code != 202:
@@ -75,7 +78,7 @@ async def ingest_one(client: httpx.AsyncClient, url: str) -> tuple[str, str, str
     for _ in range(POLL_TIMEOUT_S):
         await asyncio.sleep(POLL_INTERVAL_S)
         try:
-            r = await client.get(f"{APP_URL}/ingest/jobs/{job_id}", timeout=5.0)
+            r = await client.get(f"{app_url}/ingest/jobs/{job_id}", timeout=5.0)
         except httpx.RequestError:
             continue
         if r.status_code != 200:
@@ -87,13 +90,13 @@ async def ingest_one(client: httpx.AsyncClient, url: str) -> tuple[str, str, str
     return ("timeout", job_id, f"did not reach terminal state in {POLL_TIMEOUT_S}s")
 
 
-async def main(urls_path: Path) -> int:
+async def main(urls_path: Path, app_url: str) -> int:
     urls = read_urls(urls_path)
     if not urls:
         print(f"No URLs in {urls_path}", file=sys.stderr)
         return 1
 
-    print(f"Seeding {len(urls)} URLs via {APP_URL}/ingest ...")
+    print(f"Seeding {len(urls)} URLs via {app_url}/ingest ...")
     print()
 
     failures: list[tuple[str, str]] = []
@@ -101,14 +104,14 @@ async def main(urls_path: Path) -> int:
     async with httpx.AsyncClient() as client:
         # Verify the app is up before the first POST
         try:
-            r = await client.get(f"{APP_URL}/health", timeout=5.0)
+            r = await client.get(f"{app_url}/health", timeout=5.0)
             r.raise_for_status()
         except Exception as exc:
-            print(f"FAIL: app not reachable at {APP_URL} ({exc}). Is `make dev` running?")
+            print(f"FAIL: app not reachable at {app_url} ({exc})")
             return 1
 
         for i, url in enumerate(urls, 1):
-            state, _job_id, err = await ingest_one(client, url)
+            state, _job_id, err = await ingest_one(client, app_url, url)
             if state == "completed":
                 completed += 1
                 print(f"  [{i:2d}/{len(urls)}] OK   {url}")
@@ -128,5 +131,18 @@ async def main(urls_path: Path) -> int:
 
 
 if __name__ == "__main__":
-    path = Path(sys.argv[1]) if len(sys.argv) > 1 else PROJECT_ROOT / "scripts" / "seed_urls.txt"
-    sys.exit(asyncio.run(main(path)))
+    parser = argparse.ArgumentParser(description="Bulk-ingest a list of URLs through /ingest.")
+    parser.add_argument(
+        "urls_path",
+        nargs="?",
+        type=Path,
+        default=PROJECT_ROOT / "scripts" / "seed_urls.txt",
+        help="Path to a newline-delimited URL list (default: scripts/seed_urls.txt).",
+    )
+    parser.add_argument(
+        "--app-url",
+        default=DEFAULT_APP_URL,
+        help=f"Base URL of the running app (default: {DEFAULT_APP_URL}).",
+    )
+    args = parser.parse_args()
+    sys.exit(asyncio.run(main(args.urls_path, args.app_url)))
