@@ -43,6 +43,13 @@ Reranker contributes **+9.4pp on P@1** and **+5.1pp on MRR** over both baselines
 
 Full per-query breakdown: [`docs/eval-results-prod.txt`](docs/eval-results-prod.txt). Re-run with `make eval APP_URL=https://semantic-document-search.fly.dev` (or pass `--app-url` to `app.evaluation.runner`).
 
+## Architecture
+
+- [`docs/diagrams/architecture.md`](docs/diagrams/architecture.md) — package-by-feature layout, where the seams are
+- [`docs/diagrams/ingestion-fsm.md`](docs/diagrams/ingestion-fsm.md) — ingestion state machine (Mermaid + auto-generated PNG)
+- [`docs/diagrams/retrieval-pipeline.md`](docs/diagrams/retrieval-pipeline.md) — retrieval `Stage` sequence by strategy
+- [`docs/adr/`](docs/adr/) — 14 Architecture Decision Records covering every load-bearing choice (FSM, hybrid search, RRF, parent-child, collection versioning, ...)
+
 ## Demo notebook
 
 [`notebooks/pipeline-demo.ipynb`](notebooks/pipeline-demo.ipynb) — end-to-end walkthrough rendered with cell outputs:
