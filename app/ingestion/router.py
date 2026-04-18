@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, BackgroundTasks, Query, status
+from pydantic import BeforeValidator
 
 from app.ingestion.models import IngestJob as IngestJobModel
 from app.ingestion.models import JobTransition
@@ -14,8 +15,46 @@ from app.ingestion.state import JobState
 from app.shared.api.deps import DbDep, HttpxDep, OpenAIDep, VectorRepoDep
 from app.shared.core.exceptions import JobNotFoundError
 from app.shared.db.database import SessionLocal
+from app.shared.schemas.problem import ProblemDetails
 
-router = APIRouter(prefix="/ingest", tags=["ingestion"])
+# Declared so Schemathesis (and API consumers) see the full shape of the
+# error responses the handlers can emit. All AppError subclasses are rendered
+# as `application/problem+json` ProblemDetails by `app_error_handler`.
+_PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_400_BAD_REQUEST: {
+        "description": "Malformed request body (e.g. invalid JSON)",
+    },
+    status.HTTP_404_NOT_FOUND: {
+        "model": ProblemDetails,
+        "content": {"application/problem+json": {}},
+        "description": "Job not found",
+    },
+    status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        "model": ProblemDetails,
+        "content": {"application/problem+json": {}},
+        "description": "Validation error",
+    },
+    status.HTTP_503_SERVICE_UNAVAILABLE: {
+        "model": ProblemDetails,
+        "content": {"application/problem+json": {}},
+        "description": "LLM or vector store backend is not configured",
+    },
+}
+
+router = APIRouter(prefix="/ingest", tags=["ingestion"], responses=_PROBLEM_RESPONSES)
+
+
+def _empty_or_null_to_none(value: Any) -> Any:
+    """Treat `?state=` and `?state=null` as an absent filter.
+
+    Query strings carry only strings, so JSON-style `null` arrives as the
+    literal `"null"`; an empty value arrives as `""`. Both are conventionally
+    "no filter". Without this BeforeValidator they'd fail enum validation.
+    """
+    if isinstance(value, str) and value.strip().lower() in ("", "null"):
+        return None
+    return value
+
 
 # Non-terminal states — a job in one of these is already being worked on;
 # re-POSTing the same URL should observe it, not spawn a duplicate pipeline.
@@ -95,7 +134,11 @@ async def get_job(job_id: str, db: DbDep) -> IngestJobRead:
 @router.get("/jobs", response_model=list[IngestJobRead])
 async def list_jobs(
     db: DbDep,
-    state: Annotated[JobState | None, Query(description="Filter by job state")] = None,
+    state: Annotated[
+        JobState | None,
+        BeforeValidator(_empty_or_null_to_none),
+        Query(description="Filter by job state; omit or pass 'null' for no filter"),
+    ] = None,
     skip: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> list[IngestJobRead]:
