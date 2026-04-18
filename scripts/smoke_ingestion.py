@@ -60,7 +60,12 @@ from app.ingestion.service import current_collection_name, deterministic_job_id
 from app.shared.qdrant.collections import vector_size_for
 
 APP_URL = "http://127.0.0.1:8000"
-DEFAULT_SMOKE_URL = "https://dev.to/ben/welcome-to-dev-2877"
+# Pick a URL with multiple headings so parent/child chunking actually
+# produces a hierarchy we can verify. Pass a different URL as argv[1] if this
+# one ever 404s.
+DEFAULT_SMOKE_URL = (
+    "https://dev.to/sylwia-lask/9-things-youre-overengineering-the-browser-already-solved-them-o99"
+)
 
 
 def _fail(msg: str) -> None:
