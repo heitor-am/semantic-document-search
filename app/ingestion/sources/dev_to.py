@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from urllib.parse import urlparse
 
 import httpx
@@ -37,6 +38,23 @@ def _parse_iso(raw: str | None) -> datetime | None:
     return datetime.fromisoformat(raw.replace("Z", "+00:00"))
 
 
+def _parse_tags(raw: Any) -> list[str]:
+    """Normalize dev.to's `tag_list` to a list of strings.
+
+    The dev.to API is inconsistent: the article detail endpoint returns a
+    comma-separated string (`"webdev, javascript, css"`) while the list
+    endpoint returns an array. Smoke testing against a real article
+    surfaced this — both shapes have to round-trip.
+    """
+    if not raw:
+        return []
+    if isinstance(raw, str):
+        return [tag.strip() for tag in raw.split(",") if tag.strip()]
+    if isinstance(raw, list):
+        return [str(tag) for tag in raw]
+    return []
+
+
 async def fetch_dev_to(url: str, *, client: httpx.AsyncClient) -> SourceDocument:
     """Fetch a dev.to article and normalize it to SourceDocument.
 
@@ -58,7 +76,7 @@ async def fetch_dev_to(url: str, *, client: httpx.AsyncClient) -> SourceDocument
         body_markdown=normalize_markdown(data["body_markdown"]),
         author=user.get("username"),
         published_at=_parse_iso(data.get("published_at")),
-        tags=data.get("tag_list", []),
+        tags=_parse_tags(data.get("tag_list")),
         extras={
             "dev_to_id": data.get("id"),
             "reading_time_minutes": data.get("reading_time_minutes"),

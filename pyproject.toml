@@ -63,6 +63,9 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
+# scripts/ has to do sys.path.insert before importing `app.*` (it runs
+# standalone, not via the installed package entry point).
+"scripts/*" = ["E402"]
 
 [tool.mypy]
 python_version = "3.12"
