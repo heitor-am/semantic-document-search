@@ -1,0 +1,205 @@
+# Seed corpus for evaluation framework (Etapa 12).
+# 50 dev.to articles curated for topic diversity.
+# Generated via dev.to API (top articles per tag, validated 200 OK).
+# Count: 50
+
+# You're Not Building Netflix: Stop Coding Like You Are
+#   author=adamthedeveloper reading=10min reactions=332 tags=webdev,programming,architecture
+https://dev.to/adamthedeveloper/youre-not-building-netflix-stop-coding-like-you-are-1707
+
+# I Replaced Redis with PostgreSQL (And It's Faster)
+#   author=polliog reading=9min reactions=328 tags=postgres,redis,database
+https://dev.to/polliog/i-replaced-redis-with-postgresql-and-its-faster-4942
+
+# Stop Installing Libraries: 10 Browser APIs That Already Solve Your Problems
+#   author=sylwia-lask reading=4min reactions=251 tags=webdev,frontend,javascript
+https://dev.to/sylwia-lask/stop-installing-libraries-10-browser-apis-that-already-solve-your-problems-35bi
+
+# 16 Modern JavaScript Features That Might Blow Your Mind
+#   author=sylwia-lask reading=5min reactions=250 tags=javascript,frontend,node
+https://dev.to/sylwia-lask/16-modern-javascript-features-that-might-blow-your-mind-4h5e
+
+# I built an app in every frontend framework
+#   author=lissy93 reading=13min reactions=241 tags=performance,webdev,javascript
+https://dev.to/lissy93/i-built-an-app-in-every-frontend-framework-4a9g
+
+# We're Creating a Knowledge Collapse and No One's Talking About It
+#   author=dannwaneri reading=12min reactions=239 tags=ai,webdev,discuss
+https://dev.to/dannwaneri/were-creating-a-knowledge-collapse-and-no-ones-talking-about-it-226d
+
+# 9 Things You’re Overengineering (The Browser Already Solved Them)
+#   author=sylwia-lask reading=5min reactions=233 tags=webdev,javascript,css
+https://dev.to/sylwia-lask/9-things-youre-overengineering-the-browser-already-solved-them-o99
+
+# your agent can think. it can't remember.
+#   author=ghostdotbuild reading=7min reactions=160 tags=ai,mcp,postgres
+https://dev.to/ghostbuild/your-agent-can-think-it-cant-remember-5e1o
+
+# I Stopped Trying to Learn Every DevOps Tool: And Started Building a Platform Instead
+#   author=maame-codes reading=3min reactions=151 tags=devops,career,learning
+https://dev.to/maame-codes/i-stopped-trying-to-learn-every-devops-tool-and-started-building-a-platform-instead-33i6
+
+# Microservices Are Killing Your Performance (And Here's the Math)
+#   author=polliog reading=7min reactions=149 tags=microservices,architecture,performance
+https://dev.to/polliog/microservices-are-killing-your-performance-and-heres-the-math-21op
+
+# Why WebGPU Feels Like the Future of the Web (Live Demo 🚀)
+#   author=sylwia-lask reading=4min reactions=135 tags=javascript,webgpu,webdev
+https://dev.to/sylwia-lask/why-webgpu-feels-like-the-future-of-the-web-live-demo--2bjh
+
+# i built a social platform where everything vanishes after 24 hours
+#   author=iamovi reading=2min reactions=126 tags=socialmedia,showdev,webdev
+https://dev.to/iamovi/i-built-a-social-platform-where-everything-vanishes-after-24-hours-3imk
+
+# Go Made Me Fast. Rust Made Me Care. AWS Made Me Pay.
+#   author=art_light reading=5min reactions=121 tags=go,rust,aws
+https://dev.to/art_light/go-made-me-fast-rust-made-me-care-aws-made-me-pay-2f82
+
+# Every Sunday, I Refactor Old Code and It’s the Smartest Habit I’ve Ever Built
+#   author=hadil reading=3min reactions=112 tags=webdev,css,javascript
+https://dev.to/hadil/every-sunday-i-refactor-old-code-and-its-the-smartest-habit-ive-ever-built-2k7
+
+# Suffering from BUGS: How I Almost Deleted My Entire Project
+#   author=maame-codes reading=5min reactions=110 tags=showdev,devops,python
+https://dev.to/maame-codes/suffering-from-bugs-how-i-almost-deleted-my-entire-project-1eef
+
+# From Swagger to Tests: Building an AI-Powered API Test Generator with Python
+#   author=m4rri4nne reading=4min reactions=106 tags=python,ai,api
+https://dev.to/m4rri4nne/from-swagger-to-tests-building-an-ai-powered-api-test-generator-with-python-3mf8
+
+# The Code Review That Changed Everything
+#   author=elvissautet reading=7min reactions=99 tags=typescript,javascript,performance
+https://dev.to/elvissautet/the-code-review-that-changed-everything-1dp2
+
+# 🚀 Introducing Agentic Postgres: The First & Free Database Built for Agents
+#   author=akulkarni01 reading=3min reactions=99 tags=ai,database,postgres
+https://dev.to/tigerdata/introducing-agentic-postgres-the-first-free-database-built-for-agents-50i7
+
+# From localStorage to Database: Understanding the MongoDB Structure❗
+#   author=cristea_theodora reading=7min reactions=97 tags=mongodb,database,tutorial
+https://dev.to/cristea_theodora/from-localstorage-to-database-understanding-the-mongodb-structure-1a21
+
+# When DEV.to Stats Aren't Enough: Building My Own Memory
+#   author=pascal_cescato_692b7a8a20 reading=12min reactions=96 tags=devto,analytics,python
+https://dev.to/pascal_cescato_692b7a8a20/when-devto-stats-arent-enough-building-my-own-memory-5cid
+
+# Fighting Spam at Scale: How We Use Gemini to Protect the DEV Community
+#   author=ben reading=3min reactions=95 tags=ai,gemini,devto
+https://dev.to/devteam/fighting-spam-at-scale-how-we-use-gemini-to-protect-the-dev-community-277j
+
+# Two React Design Choices Developers Don’t Like—But Can’t Avoid
+#   author=ryansolid reading=9min reactions=91 tags=javascript,webdev,solidjs
+https://dev.to/playfulprogramming/two-react-design-choices-developers-dont-like-but-cant-avoid-d6g
+
+# 50 Hours Building a Next.js Boilerplate So You Can Ship in 30 Minutes!
+#   author=salmanshahriar reading=7min reactions=86 tags=nextjs,boilerplate,saas
+https://dev.to/salmanshahriar/i-built-a-production-ready-nextjs-boilerplate-so-you-dont-have-to-17d3
+
+# The Broke Student’s Guide to the Cloud: How I Host Projects for $0
+#   author=maame-codes reading=4min reactions=77 tags=devops,beginners,finops
+https://dev.to/maame-codes/the-broke-students-guide-to-the-cloud-how-i-host-projects-for-0-2iok
+
+# Will WebAssembly Kill JavaScript? Let’s Find Out (+ Live Demo) 🚀
+#   author=sylwia-lask reading=5min reactions=73 tags=webdev,rust,javascript
+https://dev.to/sylwia-lask/will-webassembly-kill-javascript-lets-find-out-live-demo-43ln
+
+# Unit Tests: The Greatest Lie We Tell Ourselves?
+#   author=varshithvhegde reading=6min reactions=64 tags=testing,webdev,programming
+https://dev.to/varshithvhegde/unit-tests-the-greatest-lie-we-tell-ourselves-2ehd
+
+# Most Apps Are Slower Than They Need to Be — Here’s Why (Live Demo🛸)
+#   author=sylwia-lask reading=5min reactions=62 tags=javascript,react,webassembly
+https://dev.to/sylwia-lask/most-apps-are-slower-than-they-need-to-be-heres-why-live-demo-2hh8
+
+# LLMs Are Not Deterministic. And Making Them Reliable Is Expensive (In Both the Bad Way and the Good Way)
+#   author=marcosomma reading=3min reactions=61 tags=ai,mcp,programming
+https://dev.to/marcosomma/llms-are-not-deterministic-and-making-them-reliable-is-expensive-in-both-the-bad-way-and-the-good-5bo4
+
+# Rewriting My First NUnit API Tests: Cleaner, Faster, Better
+#   author=m4rri4nne reading=8min reactions=60 tags=api,csharp,automation
+https://dev.to/m4rri4nne/rewriting-my-first-nunit-api-tests-cleaner-faster-better-24fa
+
+# The Compiler Never Used Sarcasm: Why AI Feels Unsafe to the Neurodivergent Coder
+#   author=btarbox reading=6min reactions=57 tags=ai,discuss,llm
+https://dev.to/btarbox/the-compiler-never-used-sarcasm-why-ai-feels-unsafe-to-the-neurodivergent-coder-30i3
+
+# 🪙Let’s Become a Millionaire in a Second (Gold Fountain with React Three Fiber)🪙
+#   author=webdeveloperhyper reading=6min reactions=56 tags=ai,webdev,rust
+https://dev.to/webdeveloperhyper/lets-become-a-millionaire-in-a-second-gold-fountain-with-react-three-fiber-3mo2
+
+# I Built a TUI That Makes Rust Code Inspection Feel Like Magic ✨
+#   author=yashksaini reading=12min reactions=56 tags=githubchallenge,githubcopilot,tui
+https://dev.to/yashksaini/i-built-a-tui-that-makes-rust-code-inspection-feel-like-magic-375k
+
+# Building Conflux - My Own Real-time Collaboration Engine in Rust
+#   author=kayleecodez reading=6min reactions=54 tags=rust,showdev,websocket
+https://dev.to/kayleecodez/building-conflux-my-own-real-time-collaboration-engine-in-rust-41lm
+
+# Adding Persistent Memory to Claude Code with claude-mem — Plus a DIY Lightweight Alternative
+#   author=kanta13jp1 reading=3min reactions=52 tags=claudecode,ai,productivity
+https://dev.to/kanta13jp1/adding-persistent-memory-to-claude-code-with-claude-mem-plus-a-diy-lightweight-alternative-4gha
+
+# Gemini 2.5 Flash vs Claude 3.7 Sonnet: 4 Production Constraints That Made the Decision for Me
+#   author=dumebii reading=11min reactions=52 tags=webdev,javascript,showdev
+https://dev.to/dumebii/gemini-25-flash-vs-claude-37-sonnet-4-production-constraints-that-made-the-decision-for-me-bib
+
+# 🚀How I released Chrome Extensions (💪🧠Muscle Brain v4)
+#   author=webdeveloperhyper reading=5min reactions=52 tags=ai,webdev,productivity
+https://dev.to/webdeveloperhyper/how-i-released-chrome-extensions-muscle-brain-v4-3ijn
+
+# Developers Think AI Makes Them 24% Faster. The Data Says 19% Slower.
+#   author=matthewhou reading=4min reactions=50 tags=ai,testing,discuss
+https://dev.to/matthewhou/the-metr-study-changed-how-i-think-about-ai-coding-4i84
+
+# 🧠Maybe I Just Do Not Get It!
+#   author=marcosomma reading=12min reactions=50 tags=ai,rag,machinelearning
+https://dev.to/marcosomma/maybe-i-just-do-not-get-it-5e3f
+
+# Ozigi v2 Changelog: Building a Modular Agentic Content Engine with Next.js, Supabase, and Playwright
+#   author=dumebii reading=3min reactions=44 tags=webdev,showdev,nextjs
+https://dev.to/dumebii/ozigi-v2-changelog-building-a-modular-agentic-content-engine-with-nextjs-supabase-and-playwright-59mo
+
+# Tech Stack Lessons from scaling 20x in a year
+#   author=code42cate reading=5min reactions=42 tags=webdev,docker,devops
+https://dev.to/code42cate/tech-stack-lessons-from-scaling-20x-in-a-year-1ekh
+
+# Teaching a Robot to Play a Toddler Game: VLAs, Gemini 3 Flash, and First Orchard
+#   author=ptruiz reading=14min reactions=41 tags=gemini,robotics,ai
+https://dev.to/googleai/teaching-a-robot-to-play-a-toddler-game-vlas-gemini-3-flash-and-first-orchard-14g4
+
+# The Architecture Shift: Why I'm Betting on Local-First in 2026.
+#   author=the_nortern_dev reading=3min reactions=39 tags=architecture,webdev,database
+https://dev.to/the_nortern_dev/the-architecture-shift-why-im-betting-on-local-first-in-2026-1nh6
+
+# Human-in-the-Loop AI Agents with Google ADK and Telegram
+#   author=jameszh reading=4min reactions=32 tags=ai,googleadk,fastapi
+https://dev.to/jameszh/human-in-the-loop-ai-agents-with-google-adk-and-telegram-5agd
+
+# My Take On AI and Technology (Besides the Pure Developer PoV)
+#   author=luftietheanonymous reading=7min reactions=26 tags=ai,future,machinelearning
+https://dev.to/luftietheanonymous/my-take-on-ai-and-technology-besides-the-pure-developer-pov-cce
+
+# Building RAGenius: A Production-Ready RAG System with FastAPI, Azure OpenAI & ChromaDB
+#   author=aquibpy reading=6min reactions=25 tags=python,ai,rag
+https://dev.to/aquibpy/building-ragenius-a-production-ready-rag-system-with-fastapi-azure-openai-chromadb-3281
+
+# Setting Up CocoIndex with Docker and pgvector - A Practical Guide
+#   author=cdnsteve reading=5min reactions=20 tags=python,docker,postgres
+https://dev.to/cdnsteve/setting-up-cocoindex-with-docker-and-pgvector-a-practical-guide-3mag
+
+# Taming non-determinism: from logic gates to LLMs
+#   author=leandronsp reading=8min reactions=18 tags=ai,llm,ann
+https://dev.to/leandronsp/taming-non-determinism-from-logic-gates-to-llms-3mf0
+
+# Decoding high-bandwidth memory: A practical guide to GPU memory for fine-tuning AI models
+#   author=shirmeirlador reading=10min reactions=16 tags=ai,gpu,performance
+https://dev.to/googleai/decoding-high-bandwidth-memory-a-practical-guide-to-gpu-memory-for-fine-tuning-ai-models-56af
+
+# Building a Production-Ready Task Management API with FastAPI: Complete Architecture Guide
+#   author=ravigupta97 reading=11min reactions=12 tags=fastapi,python,backend
+https://dev.to/ravigupta97/building-a-production-ready-task-management-api-with-fastapi-complete-architecture-guide-25a
+
+# Local RAG with Llama 3 & Docker: Build an Offline Second Brain (No OpenAI)
+#   author=philyeh reading=4min reactions=11 tags=python,ai,docker
+https://dev.to/philyeh/how-i-built-a-100-offline-second-brain-for-engineering-docs-using-docker-llama-3-no-openai-4gcj
+

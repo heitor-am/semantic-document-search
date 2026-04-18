@@ -1,4 +1,4 @@
-.PHONY: help install dev test lint fmt typecheck check migrate migration eval smoke smoke-cleanup diagram-states docker-build docker-up docker-down deploy clean
+.PHONY: help install dev test lint fmt typecheck check migrate migration eval eval-save seed smoke smoke-cleanup diagram-states docker-build docker-up docker-down deploy clean
 
 help:
 	@echo "Available targets:"
@@ -12,6 +12,7 @@ help:
 	@echo "  migrate         - Apply Alembic migrations"
 	@echo "  migration       - Create new migration (usage: make migration m='describe your change')"
 	@echo "  eval            - Run evaluation framework against golden set"
+	@echo "  seed            - Bulk-ingest scripts/seed_urls.txt (50 curated dev.to posts) — needs 'make dev' running"
 	@echo "  smoke           - End-to-end smoke against real Qdrant+OpenRouter (needs 'make dev' in another terminal)"
 	@echo "  smoke-cleanup   - Remove smoke test's points from Qdrant (usage: make smoke-cleanup URL=...)"
 	@echo "  diagram-states  - Export ingestion FSM state diagram (PNG)"
@@ -52,8 +53,16 @@ migration:
 eval:
 	uv run python -m app.evaluation.runner
 
+eval-save:
+	# pipefail so tee doesn't mask the runner's exit code — regressions
+	# must bubble up to CI / local shells.
+	bash -o pipefail -c 'uv run python -m app.evaluation.runner | tee docs/eval-results.txt'
+
 smoke:
 	uv run python scripts/smoke_ingestion.py "$(URL)"
+
+seed:
+	uv run python scripts/seed_corpus.py $(URLS)
 
 smoke-cleanup:
 	@test -n "$(URL)" || (echo "Usage: make smoke-cleanup URL=https://dev.to/..." && exit 1)

@@ -76,6 +76,21 @@ class TestHybridSearchStage:
         _, kwargs = repo.search_hybrid.await_args
         assert kwargs["sparse"] is None
 
+    async def test_sparse_disabled_skips_sparse_even_with_tokens(self) -> None:
+        # Even a perfectly tokenisable query must produce sparse=None when
+        # the stage is configured with sparse_enabled=False (Strategy.DENSE_ONLY).
+        repo = make_vector_repo()
+        stage = HybridSearchStage(
+            vector_repo=repo,
+            openai_client=make_openai_client(),
+            embedding_model="baai/bge-m3",
+            sparse_enabled=False,
+        )
+        await stage.run(Context(query="python async programming"))
+
+        _, kwargs = repo.search_hybrid.await_args
+        assert kwargs["sparse"] is None
+
     async def test_prefetch_limit_uses_multiplier(self) -> None:
         repo = make_vector_repo()
         stage = HybridSearchStage(
