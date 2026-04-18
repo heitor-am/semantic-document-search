@@ -1,71 +1,51 @@
 from __future__ import annotations
 
-from app.shared.qdrant.sparse_encoder import encode_bm25_sparse, tokenize
-
-
-class TestTokenize:
-    def test_lowercases_and_splits(self) -> None:
-        assert tokenize("Hello WORLD  foo") == ["hello", "world", "foo"]
-
-    def test_drops_punctuation(self) -> None:
-        assert tokenize("don't, stop!") == ["don", "t", "stop"]
-
-    def test_keeps_digit_letter_mixes(self) -> None:
-        assert tokenize("python3.12 and bge-m3") == ["python3", "12", "and", "bge", "m3"]
-
-    def test_empty_string(self) -> None:
-        assert tokenize("") == []
+from app.shared.qdrant.sparse_encoder import encode_bm25_sparse
 
 
 class TestEncodeBm25Sparse:
-    def test_single_occurrence_counts_as_one(self) -> None:
+    def test_returns_aligned_arrays_for_content_text(self) -> None:
         indices, values = encode_bm25_sparse("python async programming")
-        assert len(indices) == 3
-        assert len(values) == 3
-        assert all(v == 1.0 for v in values)
+        assert len(indices) == len(values) > 0
+        assert all(isinstance(i, int) for i in indices)
+        assert all(isinstance(v, float) for v in values)
 
-    def test_repeated_tokens_aggregate(self) -> None:
-        indices, values = encode_bm25_sparse("python python python async")
-        # Two distinct tokens: python (x3) and async (x1).
-        assert len(indices) == 2
-        assert sorted(values) == [1.0, 3.0]
-
-    def test_empty_text_produces_empty_vectors(self) -> None:
+    def test_empty_text_returns_empty_vectors(self) -> None:
         assert encode_bm25_sparse("") == ([], [])
 
-    def test_punctuation_only_produces_empty_vectors(self) -> None:
-        assert encode_bm25_sparse("!!! ??? --- ...") == ([], [])
+    def test_whitespace_only_returns_empty_vectors(self) -> None:
+        assert encode_bm25_sparse("   \n\t  ") == ([], [])
 
     def test_deterministic_across_calls(self) -> None:
-        # Stable hashes + sorted iteration → identical output every run.
-        a = encode_bm25_sparse("python async programming python")
-        b = encode_bm25_sparse("python async programming python")
+        # Same text must produce byte-identical arrays so Qdrant upsert
+        # is idempotent.
+        a = encode_bm25_sparse("rust systems programming")
+        b = encode_bm25_sparse("rust systems programming")
         assert a == b
 
-    def test_deterministic_across_processes(self) -> None:
-        # Indirectly verified: the hash function is MD5, not the randomised
-        # built-in hash(). This test documents the invariant by checking
-        # that indices for a known token are in the expected 32-bit range
-        # and that the mapping is stable for a known input.
-        indices, _ = encode_bm25_sparse("python")
-        assert len(indices) == 1
-        # 32-bit range
-        assert 0 <= indices[0] < 2**32
-        # MD5("python") first 4 bytes big-endian — hard-coded so a change
-        # in the hash function (which would break on-disk points) is loud.
-        import hashlib
+    def test_stemming_unifies_morphological_variants(self) -> None:
+        # Snowball stems regular -ing / -ed / plural suffixes. "testing"
+        # / "tested" / "tests" / "test" should collapse to a single
+        # index. (Irregular forms like "ran"/"run" don't unify — that's
+        # a known stemmer limitation, not a bug here.)
+        variants = ["test", "tests", "tested", "testing"]
+        index_sets = [set(encode_bm25_sparse(v)[0]) for v in variants]
+        common = index_sets[0]
+        for s in index_sets[1:]:
+            common &= s
+        assert common, (
+            f"stemmer should collapse {variants} to a single stem; "
+            f"got disjoint indices: {index_sets}"
+        )
 
-        expected = int.from_bytes(hashlib.md5(b"python", usedforsecurity=False).digest()[:4], "big")
-        assert indices[0] == expected
+    def test_stopwords_are_filtered(self) -> None:
+        # "the and of" is all stopwords → nothing left to index.
+        indices, _ = encode_bm25_sparse("the and of")
+        assert indices == []
 
-    def test_indices_and_values_same_length(self) -> None:
-        indices, values = encode_bm25_sparse("a b c a b a")
-        assert len(indices) == len(values)
-
-    def test_token_order_does_not_affect_output(self) -> None:
-        # Different input orderings should produce the same (set of
-        # (index, value) pairs) — we sort internally so the arrays
-        # themselves are identical too.
-        a = encode_bm25_sparse("python async programming")
-        b = encode_bm25_sparse("programming async python")
-        assert a == b
+    def test_content_survives_stopword_filtering(self) -> None:
+        # "my app feels slow" → "my" and "feels" (well, "feel") may or
+        # may not survive depending on the stopword list, but "app" and
+        # "slow" should index.
+        indices, _ = encode_bm25_sparse("my app feels slow")
+        assert len(indices) >= 2

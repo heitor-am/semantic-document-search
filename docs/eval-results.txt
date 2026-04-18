@@ -4,8 +4,8 @@ Running 32 queries x 3 strategies against http://127.0.0.1:8000
 STRATEGY         P@1     R@1     R@3     R@5     R@10    MRR     NDCG@5   NDCG@10  N
 ------------------------------------------------------------------------------------
 dense_only       0.750   0.646   0.839   0.901   0.911   0.827   0.826    0.831    32
-hybrid           0.688   0.599   0.797   0.885   0.901   0.795   0.792    0.798    32
-hybrid_rerank    0.812   0.724   0.839   0.870   0.901   0.857   0.839    0.852    32
+hybrid           0.750   0.646   0.839   0.901   0.911   0.827   0.826    0.831    32
+hybrid_rerank    0.812   0.724   0.839   0.911   0.911   0.858   0.856    0.856    32
 ====================================================================================
 
 Per-query breakdown:
@@ -16,7 +16,7 @@ Per-query breakdown:
     hybrid_rerank    P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
   browser-apis-replace-libraries: 'browser built-in APIs that replace JavaScript libraries'
     dense_only       P@1=1.00 R@1=0.50 R@5=0.50 MRR=1.00 NDCG@5=0.61
-    hybrid           P@1=0.00 R@1=0.00 R@5=0.50 MRR=0.50 NDCG@5=0.39
+    hybrid           P@1=1.00 R@1=0.50 R@5=0.50 MRR=1.00 NDCG@5=0.61
     hybrid_rerank    P@1=0.00 R@1=0.00 R@5=0.50 MRR=0.50 NDCG@5=0.39
   modern-js-features: 'modern JavaScript language features and syntax'
     dense_only       P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
@@ -28,7 +28,7 @@ Per-query breakdown:
     hybrid_rerank    P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
   rag-fastapi-production: 'production-ready RAG system with FastAPI and vector search'
     dense_only       P@1=1.00 R@1=0.50 R@5=1.00 MRR=1.00 NDCG@5=1.00
-    hybrid           P@1=1.00 R@1=0.50 R@5=1.00 MRR=1.00 NDCG@5=0.88
+    hybrid           P@1=1.00 R@1=0.50 R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    P@1=1.00 R@1=0.50 R@5=1.00 MRR=1.00 NDCG@5=0.92
   local-rag-docker: 'self-hosted offline RAG with Docker and Llama'
     dense_only       P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
@@ -44,7 +44,7 @@ Per-query breakdown:
     hybrid_rerank    P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
   agent-memory: 'how AI agents remember context across sessions'
     dense_only       P@1=1.00 R@1=0.50 R@5=1.00 MRR=1.00 NDCG@5=1.00
-    hybrid           P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.50 NDCG@5=0.69
+    hybrid           P@1=1.00 R@1=0.50 R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    P@1=1.00 R@1=0.50 R@5=1.00 MRR=1.00 NDCG@5=1.00
   llm-non-determinism: 'LLM non-determinism reliability production'
     dense_only       P@1=1.00 R@1=0.50 R@5=1.00 MRR=1.00 NDCG@5=1.00
@@ -60,7 +60,7 @@ Per-query breakdown:
     hybrid_rerank    P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
   wasm-vs-js: 'WebAssembly replacing JavaScript for web'
     dense_only       P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.50 NDCG@5=0.63
-    hybrid           P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
+    hybrid           P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.50 NDCG@5=0.63
     hybrid_rerank    P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
   ai-productivity-myth: 'does AI really make developers faster productivity claims'
     dense_only       P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
@@ -80,7 +80,7 @@ Per-query breakdown:
     hybrid_rerank    P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
   local-first-architecture: 'local-first app architecture offline sync'
     dense_only       P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
-    hybrid           P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.50 NDCG@5=0.63
+    hybrid           P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
   kw-redis-short: 'redis caching replacement'
     dense_only       P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
@@ -100,35 +100,35 @@ Per-query breakdown:
     hybrid_rerank    P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
   paraphrase-slow-app: 'my app feels slow for no reason'
     dense_only       P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.25 NDCG@5=0.43
-    hybrid           P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.20 NDCG@5=0.39
+    hybrid           P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.25 NDCG@5=0.43
     hybrid_rerank    P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.25 NDCG@5=0.43
   paraphrase-overengineering: "stop writing unnecessary code I don't need"
     dense_only       P@1=0.00 R@1=0.00 R@5=0.00 MRR=0.00 NDCG@5=0.00
-    hybrid           P@1=1.00 R@1=0.50 R@5=0.50 MRR=1.00 NDCG@5=0.61
-    hybrid_rerank    P@1=0.00 R@1=0.00 R@5=0.00 MRR=0.17 NDCG@5=0.00
+    hybrid           P@1=0.00 R@1=0.00 R@5=0.00 MRR=0.00 NDCG@5=0.00
+    hybrid_rerank    P@1=0.00 R@1=0.00 R@5=0.00 MRR=0.00 NDCG@5=0.00
   paraphrase-broke-student: 'hosting side projects cheaply as a student'
     dense_only       P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
   paraphrase-code-review: 'making code reviews actually useful'
     dense_only       P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.20 NDCG@5=0.39
-    hybrid           P@1=0.00 R@1=0.00 R@5=0.00 MRR=0.00 NDCG@5=0.00
-    hybrid_rerank    P@1=0.00 R@1=0.00 R@5=0.00 MRR=0.00 NDCG@5=0.00
+    hybrid           P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.20 NDCG@5=0.39
+    hybrid_rerank    P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.20 NDCG@5=0.39
   paraphrase-scaling: 'what I learned from rapid team growth'
     dense_only       P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.50 NDCG@5=0.63
-    hybrid           P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.25 NDCG@5=0.43
+    hybrid           P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.50 NDCG@5=0.63
     hybrid_rerank    P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
   ambig-ai-productivity: 'can AI actually make me a better developer'
     dense_only       P@1=1.00 R@1=0.33 R@5=0.33 MRR=1.00 NDCG@5=0.47
     hybrid           P@1=1.00 R@1=0.33 R@5=0.33 MRR=1.00 NDCG@5=0.47
-    hybrid_rerank    P@1=1.00 R@1=0.33 R@5=0.33 MRR=1.00 NDCG@5=0.47
+    hybrid_rerank    P@1=1.00 R@1=0.33 R@5=0.67 MRR=1.00 NDCG@5=0.65
   ambig-real-time-collab: 'building realtime collaborative editing engine'
     dense_only       P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
-    hybrid           P@1=0.00 R@1=0.00 R@5=1.00 MRR=0.50 NDCG@5=0.63
+    hybrid           P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    P@1=1.00 R@1=1.00 R@5=1.00 MRR=1.00 NDCG@5=1.00
   ambig-llms-production: 'making LLM systems reliable in production'
     dense_only       P@1=1.00 R@1=0.33 R@5=1.00 MRR=1.00 NDCG@5=1.00
-    hybrid           P@1=1.00 R@1=0.33 R@5=1.00 MRR=1.00 NDCG@5=0.97
+    hybrid           P@1=1.00 R@1=0.33 R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    P@1=1.00 R@1=0.33 R@5=1.00 MRR=1.00 NDCG@5=1.00
   ambig-local-first: 'apps that still work without internet'
     dense_only       P@1=0.00 R@1=0.00 R@5=0.00 MRR=0.00 NDCG@5=0.00

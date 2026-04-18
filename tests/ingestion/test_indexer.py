@@ -133,8 +133,10 @@ class TestChunkToPoint:
         assert SPARSE_VECTOR_NAME in point.vectors
         sparse = point.vectors[SPARSE_VECTOR_NAME]
         assert isinstance(sparse, SparseValue)
-        assert len(sparse.indices) == 3  # 3 distinct tokens
-        assert list(sparse.values) == [1.0, 1.0, 1.0]  # each appears once
+        # FastEmbed's Qdrant/bm25 applies TF saturation so values aren't
+        # raw frequencies — just assert shape alignment and positivity.
+        assert len(sparse.indices) == len(sparse.values) > 0
+        assert all(v > 0 for v in sparse.values)
 
     def test_sparse_vector_omitted_for_empty_content(self) -> None:
         # Content with no tokens (pure punctuation) → dense-only point.
