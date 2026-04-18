@@ -24,7 +24,6 @@ class Settings(BaseSettings):
     qdrant_api_key: str = ""
     qdrant_collection_version: str = "v1"
 
-    ai_features_enabled: bool = True
     git_sha: str = "dev"
 
 

@@ -12,10 +12,9 @@ from app.shared.db.database import Base, get_db
 
 @pytest.fixture(autouse=True)
 def _deterministic_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    # Force AI features off and Qdrant unset by default so tests don't depend on local .env.
-    # Tests that need those paths set them explicitly.
+    # Clear external-service env so tests don't depend on local .env. Tests
+    # that exercise those paths override the deps explicitly.
     monkeypatch.setenv("OPENROUTER_API_KEY", "")
-    monkeypatch.setenv("AI_FEATURES_ENABLED", "false")
     monkeypatch.setenv("QDRANT_URL", "")
     monkeypatch.setenv("QDRANT_API_KEY", "")
     get_settings.cache_clear()
