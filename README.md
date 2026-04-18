@@ -15,6 +15,12 @@ Production-grade RAG search: package-by-feature, FSM-driven ingestion, functiona
 - **Quality:** Ruff · mypy (strict) · pytest · Schemathesis · bandit · pip-audit
 - **Infra:** Docker · Fly.io · GitHub Actions · Dev Container
 
+## Demo
+
+[`notebooks/pipeline-demo.ipynb`](notebooks/pipeline-demo.ipynb) — end-to-end walkthrough rendered with cell outputs:
+ingestion FSM transitions, the three retrieval strategies side-by-side, and the evaluation summary.
+GitHub renders it inline; locally run `make dev` first, then open in Jupyter to re-execute.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
