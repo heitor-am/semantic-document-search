@@ -1,69 +1,63 @@
-"""BM25-style sparse vector encoder.
+"""BM25 sparse encoder, backed by FastEmbed's ``Qdrant/bm25`` model.
 
-Produces (indices, values) pairs that pair with Qdrant's sparse vector
-support. Qdrant applies the IDF modifier server-side — we only ship raw
-term frequencies plus a stable hash per token.
+This replaces a naïve, hand-rolled tokenizer (lowercase regex +
+hardcoded stopword list) that — empirically — dragged hybrid search
+below dense-only in eval:
 
-Why stable hashes instead of a vocabulary?
-    A vocabulary dict would need to be shared between ingestion and search,
-    persisted across restarts, and rebuilt whenever a new term showed up.
-    Hashing sidesteps all of that. Collisions are vanishingly rare at
-    32 bits (~1 in 4 billion) and merely merge two tokens' contributions;
-    the resulting sparse vector is still semantically sound.
+  - no stemming: ``slow`` didn't match ``slower``
+  - stopword list coverage was a guess game
+  - no language awareness
 
-Why MD5 instead of Python's `hash()`?
-    `hash()` is randomised per interpreter start, so the same token would
-    get different indices in the ingest process and the search process.
-    MD5 is stable, deterministic, and fast enough — we hash a few dozen
-    tokens per query, not a hot path.
+FastEmbed's ``Qdrant/bm25`` model ships the canonical tokenizer Qdrant
+expects for hybrid search: per-language stopword removal, Snowball
+stemmer, hash-based indices, and values normalised so Qdrant's
+``Modifier.IDF`` on the collection applies cleanly. It's the purpose-
+built counterpart to the Qdrant Query API / RRF fusion path — no point
+rolling our own when the vendor publishes the right thing.
+
+Trade-offs:
+    - First import triggers a ~50MB model download (cached under
+      ``~/.cache/fastembed``). Pre-download in the Docker image so
+      cold-starts on Fly.io don't pay the cost.
+    - Default language is English, matching the dev.to corpus used
+      here. Multilingual corpora would need a different model id.
 """
 
 from __future__ import annotations
 
-import hashlib
-import re
-from collections import Counter
+from fastembed import SparseTextEmbedding
 
-_TOKEN_RE = re.compile(r"[a-zA-Z0-9]+")
+_MODEL_NAME = "Qdrant/bm25"
 
-
-def tokenize(text: str) -> list[str]:
-    """Lowercase alphanumeric tokens. Same normalisation used for dense
-    content (chunk payload) so queries hit the terms they'd expect."""
-    return _TOKEN_RE.findall(text.lower())
+# Lazy singleton — constructing SparseTextEmbedding downloads the model
+# on first call. One encoder instance is fine across the app (thread-
+# safe for inference) and avoids repeated init cost.
+_model: SparseTextEmbedding | None = None
 
 
-def _stable_hash_32(token: str) -> int:
-    """32-bit deterministic token → index.
-
-    `usedforsecurity=False` flags this to bandit / CWE-327 as a
-    non-security use: collisions are tolerable (they merge two tokens'
-    contributions), and we're not authenticating anything — we're just
-    hashing strings into a fixed-width index space that Qdrant stores.
-    """
-    return int.from_bytes(
-        hashlib.md5(token.encode("utf-8"), usedforsecurity=False).digest()[:4],
-        "big",
-    )
+def _get_model() -> SparseTextEmbedding:
+    global _model
+    if _model is None:
+        _model = SparseTextEmbedding(model_name=_MODEL_NAME)
+    return _model
 
 
 def encode_bm25_sparse(text: str) -> tuple[list[int], list[float]]:
     """Encode text as (indices, values) for Qdrant sparse storage.
 
-    The values are raw term frequencies. Qdrant applies the BM25 IDF
-    modifier server-side (collection is created with `modifier=IDF`),
-    so we don't multiply by IDF here.
+    Delegates to ``FastEmbed``'s ``Qdrant/bm25`` model which handles
+    lowercasing, stopword filtering, Snowball stemming, and hashed
+    index generation. Qdrant applies the IDF modifier server-side
+    (collection schema declares ``modifier=IDF``), so ``values`` here
+    are TF-normalised but pre-IDF.
 
-    Empty or token-less text yields empty lists — callers should skip
-    upserting a sparse vector in that case, not send empty vectors.
+    Empty / whitespace-only input returns empty arrays so callers can
+    skip upserting a sparse vector rather than sending an empty one
+    (Qdrant rejects empty sparse vectors).
     """
-    tokens = tokenize(text)
-    if not tokens:
+    if not text or not text.strip():
         return [], []
-    counts = Counter(tokens)
-    # Deterministic ordering so two encodes of the same text produce the
-    # exact same arrays — helps upsert idempotency.
-    items = sorted(counts.items())
-    indices = [_stable_hash_32(token) for token, _ in items]
-    values = [float(count) for _, count in items]
+    [embedding] = list(_get_model().embed([text]))
+    indices = [int(i) for i in embedding.indices]
+    values = [float(v) for v in embedding.values]
     return indices, values

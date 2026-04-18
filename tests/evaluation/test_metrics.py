@@ -4,7 +4,13 @@ import math
 
 import pytest
 
-from app.evaluation.metrics import mean, ndcg_at_k, recall_at_k, reciprocal_rank
+from app.evaluation.metrics import (
+    mean,
+    ndcg_at_k,
+    precision_at_k,
+    recall_at_k,
+    reciprocal_rank,
+)
 
 
 class TestRecallAtK:
@@ -28,6 +34,46 @@ class TestRecallAtK:
     def test_zero_k_raises(self) -> None:
         with pytest.raises(ValueError):
             recall_at_k(["a"], ["a"], k=0)
+
+
+class TestPrecisionAtK:
+    def test_all_top_k_relevant(self) -> None:
+        # 2 of top-2 are in relevant → precision 1.0
+        assert precision_at_k(["a", "b", "c"], ["a", "b"], k=2) == 1.0
+
+    def test_half_of_top_k_relevant(self) -> None:
+        # 1 of top-2 are relevant → 0.5
+        assert precision_at_k(["a", "x"], ["a"], k=2) == 0.5
+
+    def test_first_result_is_the_match(self) -> None:
+        # P@1: the top result is the only slot; either it's relevant or it isn't.
+        assert precision_at_k(["a", "b", "c"], ["a"], k=1) == 1.0
+        assert precision_at_k(["b", "a", "c"], ["a"], k=1) == 0.0
+
+    def test_k_larger_than_retrieved_uses_available_slots(self) -> None:
+        # Top-10 asked, only 2 retrieved. Precision is "of what I returned,
+        # how much was right?" — not diluted by empty slots.
+        assert precision_at_k(["a", "b"], ["a"], k=10) == 0.5
+
+    def test_empty_retrieved_is_0(self) -> None:
+        assert precision_at_k([], ["a"], k=3) == 0.0
+
+    def test_empty_relevant_is_0(self) -> None:
+        # No relevant set → precision is undefined; we return 0 rather than
+        # vacuous 1 (a precision "of the right answer" needs a right answer).
+        assert precision_at_k(["a", "b"], [], k=2) == 0.0
+
+    def test_zero_k_raises(self) -> None:
+        with pytest.raises(ValueError):
+            precision_at_k(["a"], ["a"], k=0)
+
+    def test_duplicates_in_retrieved_do_not_inflate_numerator(self) -> None:
+        # Runner dedups before calling, but the metric itself must be
+        # consistent with recall_at_k (which set()'s top-k). Two copies
+        # of the same relevant doc in slots 1-2 is precision 1/2, not 1.
+        assert precision_at_k(["a", "a"], ["a"], k=2) == 0.5
+        # Single relevant doc mixed with duplicates still penalised.
+        assert precision_at_k(["a", "a", "b"], ["a"], k=3) == pytest.approx(1 / 3)
 
 
 class TestReciprocalRank:

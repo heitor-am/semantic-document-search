@@ -31,6 +31,34 @@ def recall_at_k(retrieved: Sequence[str], relevant: Iterable[str], k: int) -> fl
     return len(top & relevant_set) / len(relevant_set)
 
 
+def precision_at_k(retrieved: Sequence[str], relevant: Iterable[str], k: int) -> float:
+    """Fraction of the top-k retrieved that are relevant.
+
+    Complements recall: precision answers "of what I returned, how much
+    was right?" P@1 is the strictest — "did the FIRST result answer the
+    query?" — and where reranking pays its keep most.
+
+    Duplicates in `retrieved` don't inflate the numerator — we count
+    unique relevant hits, consistent with `recall_at_k`'s `set(top)`
+    handling. The denominator stays the number of slots returned, so
+    a redundant top-k still dilutes precision.
+
+    precision_at_k([a, b, c], {a}, k=3) -> 1/3
+    precision_at_k([a, a], {a}, k=2) -> 1/2  (one unique hit, two slots)
+    precision_at_k([a, b], {}, k=2) -> 0.0  (no relevant items defined)
+    """
+    if k <= 0:
+        raise ValueError(f"k must be positive, got {k}")
+    relevant_set = set(relevant)
+    if not relevant_set:
+        return 0.0
+    top = retrieved[:k]
+    if not top:
+        return 0.0
+    unique_hits = len(set(top) & relevant_set)
+    return unique_hits / len(top)
+
+
 def reciprocal_rank(retrieved: Sequence[str], relevant: Iterable[str]) -> float:
     """Reciprocal rank of the first relevant doc in `retrieved`.
 

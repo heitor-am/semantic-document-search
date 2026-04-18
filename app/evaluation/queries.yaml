@@ -108,3 +108,126 @@ queries:
   expected_source_urls:
   - https://dev.to/the_nortern_dev/the-architecture-shift-why-im-betting-on-local-first-in-2026-1nh6
   min_recall_at_5: 1.0
+
+# --- Adversarial set: queries designed to stress different retrieval
+# strategies so score differences don't collapse under a single mode.
+# See docs/eval-results.txt for the interpretation per profile.
+
+# Keyword-heavy / short queries — favour sparse BM25 (hybrid edge).
+- id: kw-redis-short
+  query: redis caching replacement
+  expected_source_urls:
+  - https://dev.to/polliog/i-replaced-redis-with-postgresql-and-its-faster-4942
+  min_recall_at_5: 1.0
+  description: Short 3-word, keyword-dense. BM25 should anchor this.
+
+- id: kw-wasm-short
+  query: wasm
+  expected_source_urls:
+  - https://dev.to/sylwia-lask/will-webassembly-kill-javascript-lets-find-out-live-demo-43ln
+  min_recall_at_5: 1.0
+  description: Single-word abbreviation — pure keyword match territory.
+
+- id: kw-docker-pgvector
+  query: docker pgvector setup
+  expected_source_urls:
+  - https://dev.to/cdnsteve/setting-up-cocoindex-with-docker-and-pgvector-a-practical-guide-3mag
+  min_recall_at_5: 1.0
+  description: Three specific technical terms. Sparse excels on co-occurrence.
+
+- id: kw-nunit-csharp
+  query: NUnit C# API test refactor
+  expected_source_urls:
+  - https://dev.to/m4rri4nne/rewriting-my-first-nunit-api-tests-cleaner-faster-better-24fa
+  min_recall_at_5: 1.0
+  description: NUnit is a distinctive keyword with a single match.
+
+# Paraphrase / zero-overlap queries — favour dense semantic retrieval.
+- id: paraphrase-slow-app
+  query: my app feels slow for no reason
+  expected_source_urls:
+  - https://dev.to/sylwia-lask/most-apps-are-slower-than-they-need-to-be-heres-why-live-demo-2hh8
+  min_recall_at_5: 1.0
+  description: No keyword overlap with article title ("Most Apps Are Slower...").
+
+- id: paraphrase-overengineering
+  query: stop writing unnecessary code I don't need
+  expected_source_urls:
+  - https://dev.to/sylwia-lask/9-things-youre-overengineering-the-browser-already-solved-them-o99
+  - https://dev.to/sylwia-lask/stop-installing-libraries-10-browser-apis-that-already-solve-your-problems-35bi
+  min_recall_at_5: 0.0
+  description: >
+    Hard paraphrase — zero keyword overlap with either expected title.
+    Empirically 0-0.5 recall across strategies; floor tracks current
+    floor-of-strategies so the tripwire only fires on real regressions.
+
+- id: paraphrase-broke-student
+  query: hosting side projects cheaply as a student
+  expected_source_urls:
+  - https://dev.to/maame-codes/the-broke-students-guide-to-the-cloud-how-i-host-projects-for-0-2iok
+  min_recall_at_5: 1.0
+  description: Paraphrase of "Broke Student's Guide to the Cloud".
+
+- id: paraphrase-code-review
+  query: making code reviews actually useful
+  expected_source_urls:
+  - https://dev.to/elvissautet/the-code-review-that-changed-everything-1dp2
+  min_recall_at_5: 0.0
+  description: >
+    Dense catches this; hybrid and rerank don't in current corpus.
+    Tripwire disabled so it tracks the current strategy-floor; the
+    delta across strategies is the signal.
+
+- id: paraphrase-scaling
+  query: what I learned from rapid team growth
+  expected_source_urls:
+  - https://dev.to/code42cate/tech-stack-lessons-from-scaling-20x-in-a-year-1ekh
+  min_recall_at_5: 1.0
+  description: Paraphrase — "rapid team growth" vs title "scaling 20x in a year".
+
+# Ambiguous / multi-relevant queries — reranking reorders to put the
+# best match first (MRR / P@1 are most sensitive).
+- id: ambig-ai-productivity
+  query: can AI actually make me a better developer
+  expected_source_urls:
+  - https://dev.to/matthewhou/the-metr-study-changed-how-i-think-about-ai-coding-4i84
+  - https://dev.to/btarbox/the-compiler-never-used-sarcasm-why-ai-feels-unsafe-to-the-neurodivergent-coder-30i3
+  - https://dev.to/luftietheanonymous/my-take-on-ai-and-technology-besides-the-pure-developer-pov-cce
+  min_recall_at_5: 0.33
+  description: >
+    3 related articles; empirically ~1 of 3 surfaces (same rank across
+    strategies). Floor at 1/3 tracks the actual behaviour — the value
+    comes from per-query NDCG, not this particular recall.
+
+- id: ambig-real-time-collab
+  query: building realtime collaborative editing engine
+  expected_source_urls:
+  - https://dev.to/kayleecodez/building-conflux-my-own-real-time-collaboration-engine-in-rust-41lm
+  min_recall_at_5: 1.0
+
+- id: ambig-llms-production
+  query: making LLM systems reliable in production
+  expected_source_urls:
+  - https://dev.to/marcosomma/llms-are-not-deterministic-and-making-them-reliable-is-expensive-in-both-the-bad-way-and-the-good-5bo4
+  - https://dev.to/leandronsp/taming-non-determinism-from-logic-gates-to-llms-3mf0
+  - https://dev.to/aquibpy/building-ragenius-a-production-ready-rag-system-with-fastapi-azure-openai-chromadb-3281
+  min_recall_at_5: 0.66
+  description: 3 relevant angles (reliability, non-determinism, production RAG).
+
+- id: ambig-local-first
+  query: apps that still work without internet
+  expected_source_urls:
+  - https://dev.to/the_nortern_dev/the-architecture-shift-why-im-betting-on-local-first-in-2026-1nh6
+  - https://dev.to/philyeh/how-i-built-a-100-offline-second-brain-for-engineering-docs-using-docker-llama-3-no-openai-4gcj
+  min_recall_at_5: 0.0
+  description: >
+    Genuinely hard paraphrase — both relevant articles have neither
+    "internet" nor "offline" in their titles. All strategies score 0
+    here; the tripwire is relaxed to track the floor rather than fail.
+
+- id: ambig-mongodb
+  query: when to pick MongoDB over SQL
+  expected_source_urls:
+  - https://dev.to/cristea_theodora/from-localstorage-to-database-understanding-the-mongodb-structure-1a21
+  min_recall_at_5: 1.0
+  description: Only one MongoDB article; the rest are SQL/Postgres.

@@ -18,7 +18,13 @@ from pathlib import Path
 import httpx
 import yaml
 
-from app.evaluation.metrics import mean, ndcg_at_k, recall_at_k, reciprocal_rank
+from app.evaluation.metrics import (
+    mean,
+    ndcg_at_k,
+    precision_at_k,
+    recall_at_k,
+    reciprocal_rank,
+)
 from app.evaluation.schemas import GoldenQuery, GoldenSet, QueryResult, StrategySummary
 from app.retrieval.service import Strategy
 
@@ -80,6 +86,9 @@ async def run_one(
         query_id=query.id,
         query=query.query,
         strategy=strategy,
+        precision_at_1=precision_at_k(retrieved_urls, relevant, k=1),
+        recall_at_1=recall_at_k(retrieved_urls, relevant, k=1),
+        recall_at_3=recall_at_k(retrieved_urls, relevant, k=3),
         recall_at_5=recall_at_k(retrieved_urls, relevant, k=5),
         recall_at_10=recall_at_k(retrieved_urls, relevant, k=10),
         mrr=reciprocal_rank(retrieved_urls, relevant),
@@ -93,6 +102,9 @@ def summarise(results: Sequence[QueryResult], strategy: Strategy) -> StrategySum
     per_strategy = [r for r in results if r.strategy == strategy]
     return StrategySummary(
         strategy=strategy,
+        mean_precision_at_1=mean(r.precision_at_1 for r in per_strategy),
+        mean_recall_at_1=mean(r.recall_at_1 for r in per_strategy),
+        mean_recall_at_3=mean(r.recall_at_3 for r in per_strategy),
         mean_recall_at_5=mean(r.recall_at_5 for r in per_strategy),
         mean_recall_at_10=mean(r.recall_at_10 for r in per_strategy),
         mean_mrr=mean(r.mrr for r in per_strategy),
@@ -104,19 +116,24 @@ def summarise(results: Sequence[QueryResult], strategy: Strategy) -> StrategySum
 
 def print_table(summaries: Sequence[StrategySummary]) -> None:
     header = (
-        f"{'STRATEGY':<20} {'R@5':<8} {'R@10':<8} {'MRR':<8} {'NDCG@5':<9} {'NDCG@10':<9} {'N'}"
+        f"{'STRATEGY':<16} "
+        f"{'P@1':<7} {'R@1':<7} {'R@3':<7} {'R@5':<7} {'R@10':<7} "
+        f"{'MRR':<7} {'NDCG@5':<8} {'NDCG@10':<8} {'N'}"
     )
     print("=" * len(header))
     print(header)
     print("-" * len(header))
     for s in summaries:
         print(
-            f"{s.strategy.value:<20} "
-            f"{s.mean_recall_at_5:<8.3f} "
-            f"{s.mean_recall_at_10:<8.3f} "
-            f"{s.mean_mrr:<8.3f} "
-            f"{s.mean_ndcg_at_5:<9.3f} "
-            f"{s.mean_ndcg_at_10:<9.3f} "
+            f"{s.strategy.value:<16} "
+            f"{s.mean_precision_at_1:<7.3f} "
+            f"{s.mean_recall_at_1:<7.3f} "
+            f"{s.mean_recall_at_3:<7.3f} "
+            f"{s.mean_recall_at_5:<7.3f} "
+            f"{s.mean_recall_at_10:<7.3f} "
+            f"{s.mean_mrr:<7.3f} "
+            f"{s.mean_ndcg_at_5:<8.3f} "
+            f"{s.mean_ndcg_at_10:<8.3f} "
             f"{s.query_count}"
         )
     print("=" * len(header))
@@ -135,7 +152,8 @@ def print_per_query(results: Sequence[QueryResult]) -> None:
         print(f"  {qid}: {query_text!r}")
         for r in rows:
             print(
-                f"    {r.strategy.value:<16} R@5={r.recall_at_5:.2f} "
+                f"    {r.strategy.value:<16} P@1={r.precision_at_1:.2f} "
+                f"R@1={r.recall_at_1:.2f} R@5={r.recall_at_5:.2f} "
                 f"MRR={r.mrr:.2f} NDCG@5={r.ndcg_at_5:.2f}"
             )
 
