@@ -28,7 +28,7 @@ class TestBuildPipeline:
             Strategy.HYBRID,
             vector_repo=MagicMock(),
             openai_client=MagicMock(),
-            httpx_client=httpx.AsyncClient(),
+            httpx_client=MagicMock(spec=httpx.AsyncClient),
             settings=_settings(),
         )
         names = [s.name for s in pipe.stages]
@@ -39,7 +39,7 @@ class TestBuildPipeline:
             Strategy.HYBRID_RERANK,
             vector_repo=MagicMock(),
             openai_client=MagicMock(),
-            httpx_client=httpx.AsyncClient(),
+            httpx_client=MagicMock(spec=httpx.AsyncClient),
             settings=_settings(),
         )
         names = [s.name for s in pipe.stages]
@@ -50,7 +50,7 @@ class TestBuildPipeline:
             Strategy.HYBRID,
             vector_repo=MagicMock(),
             openai_client=MagicMock(),
-            httpx_client=httpx.AsyncClient(),
+            httpx_client=MagicMock(spec=httpx.AsyncClient),
             settings=_settings(),
         )
         hybrid = next(s for s in pipe.stages if isinstance(s, HybridSearchStage))
@@ -61,7 +61,7 @@ class TestBuildPipeline:
             Strategy.HYBRID_RERANK,
             vector_repo=MagicMock(),
             openai_client=MagicMock(),
-            httpx_client=httpx.AsyncClient(),
+            httpx_client=MagicMock(spec=httpx.AsyncClient),
             settings=_settings(),
         )
         reranker = next(s for s in pipe.stages if isinstance(s, RerankerStage))
@@ -73,7 +73,7 @@ class TestBuildPipeline:
                 strategy,
                 vector_repo=MagicMock(),
                 openai_client=MagicMock(),
-                httpx_client=httpx.AsyncClient(),
+                httpx_client=MagicMock(spec=httpx.AsyncClient),
                 settings=_settings(),
             )
             assert isinstance(pipe.stages[-1], ParentChildStage)

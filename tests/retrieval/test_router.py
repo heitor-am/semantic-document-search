@@ -172,14 +172,19 @@ class TestSearch:
         # Both RRF scores in the test fixture are below 0.95, so zero results.
         assert response.json()["results"] == []
 
+    @respx.mock
     def test_default_strategy_is_hybrid_rerank(self, search_client) -> None:
-        # No strategy param → defaults to hybrid_rerank. Without respx mocking
-        # the rerank endpoint the call will fail, but gracefully (optional
-        # stage) and the response still returns 200 with warnings.
+        # No strategy param → defaults to hybrid_rerank. Mock the rerank
+        # endpoint to fail fast so the optional stage degrades gracefully
+        # without attempting a real outbound network call (which would make
+        # this test slow / flaky on hermetic CI).
+        respx.post(RERANK_URL).mock(return_value=httpx.Response(503, text="upstream down"))
+
         response = search_client["client"].get("/search", params={"q": "python"})
         body = response.json()
         assert response.status_code == 200
         assert body["strategy"] == "hybrid_rerank"
+        assert len(body["warnings"]) == 1  # reranker failed, stage optional
 
     def test_invalid_strategy_returns_422(self, search_client) -> None:
         response = search_client["client"].get(

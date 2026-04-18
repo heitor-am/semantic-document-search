@@ -48,6 +48,9 @@ class RerankerStage(Stage):
             return ctx
 
         documents = [c.content for c in ctx.results]
+        # Clamp top_n — many rerank APIs 400 when top_n > len(documents).
+        # The hybrid stage may have returned fewer hits than ctx.top_k.
+        top_n = min(ctx.top_k, len(documents))
         try:
             response = await self._client.post(
                 f"{self._base_url}/rerank",
@@ -60,7 +63,7 @@ class RerankerStage(Stage):
                     "query": ctx.query,
                     "documents": documents,
                     "model": self._model,
-                    "top_n": ctx.top_k,
+                    "top_n": top_n,
                 },
                 timeout=self._timeout,
             )
@@ -77,7 +80,10 @@ class RerankerStage(Stage):
                 Candidate(
                     chunk_id=original.chunk_id,
                     score=float(item["relevance_score"]),
-                    payload=original.payload,
+                    # Copy so downstream mutation on one candidate's payload
+                    # doesn't leak into the original (same pattern as
+                    # HybridSearchStage + BM25Index).
+                    payload=dict(original.payload),
                 )
             )
         ctx.results = reordered

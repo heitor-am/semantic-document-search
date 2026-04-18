@@ -72,7 +72,8 @@ class TestRerankerStage:
 
         async with httpx.AsyncClient() as client:
             stage = make_stage(client)
-            ctx = make_ctx(("c0", 0.5, "alpha"), ("c1", 0.4, "beta"))
+            # 3 docs, top_k=3 → no clamp needed, top_n in the wire body is 3.
+            ctx = make_ctx(("c0", 0.5, "alpha"), ("c1", 0.4, "beta"), ("c2", 0.3, "gamma"))
             ctx.top_k = 3
             await stage.run(ctx)
 
@@ -82,7 +83,7 @@ class TestRerankerStage:
 
         payload = _json.loads(body)
         assert payload["query"] == "python async"
-        assert payload["documents"] == ["alpha", "beta"]
+        assert payload["documents"] == ["alpha", "beta", "gamma"]
         assert payload["model"] == "cohere/rerank-v3.5"
         assert payload["top_n"] == 3
         assert route.calls.last.request.headers["Authorization"] == "Bearer sk-test"
@@ -124,10 +125,45 @@ class TestRerankerStage:
         assert exc_info.value.stage_name == "reranker"
 
     def test_marked_optional(self) -> None:
-        async def _probe() -> bool:
-            async with httpx.AsyncClient() as client:
-                return make_stage(client).optional
+        # optional is a class attribute — no event loop needed.
+        assert RerankerStage.optional is True
 
-        import asyncio
+    @respx.mock
+    async def test_clamps_top_n_to_document_count(self) -> None:
+        # ctx.top_k=10 but only 2 docs in results → top_n should be 2.
+        route = respx.post(RERANK_URL).mock(return_value=httpx.Response(200, json={"results": []}))
+        async with httpx.AsyncClient() as client:
+            stage = make_stage(client)
+            ctx = make_ctx(("c0", 0.5, "a"), ("c1", 0.4, "b"))
+            ctx.top_k = 10
 
-        assert asyncio.get_event_loop().run_until_complete(_probe()) is True
+            await stage.run(ctx)
+
+        import json as _json
+
+        payload = _json.loads(route.calls.last.request.content)
+        assert payload["top_n"] == 2
+
+    @respx.mock
+    async def test_reranked_candidates_get_copied_payloads(self) -> None:
+        # Mutating a reranked candidate's payload must not leak into the
+        # original, keeping state isolation consistent with HybridSearchStage.
+        respx.post(RERANK_URL).mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "results": [
+                        {"index": 0, "relevance_score": 0.9, "document": {"text": "a"}},
+                    ],
+                },
+            )
+        )
+        async with httpx.AsyncClient() as client:
+            stage = make_stage(client)
+            ctx = make_ctx(("c0", 0.5, "a"))
+            original_payload = ctx.results[0].payload
+
+            ctx = await stage.run(ctx)
+
+            # Reranked candidate has its own payload dict
+            assert ctx.results[0].payload is not original_payload
