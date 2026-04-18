@@ -132,7 +132,14 @@ async def _poll_until_terminal(
 ) -> dict | None:
     print("\n=== 4. Poll for terminal state ===")
     for attempt in range(timeout_s):
-        r = await client.get(f"{APP_URL}/ingest/jobs/{job_id}", timeout=5.0)
+        try:
+            r = await client.get(f"{APP_URL}/ingest/jobs/{job_id}", timeout=5.0)
+        except httpx.RequestError as exc:
+            _fail(f"job-status endpoint unreachable: {exc}")
+            return None
+        if r.status_code != 200:
+            _fail(f"GET /ingest/jobs/{job_id} returned {r.status_code}: {r.text}")
+            return None
         body = r.json()
         state = body["state"]
         if state in ("completed", "failed"):
@@ -212,6 +219,9 @@ async def _verify_idempotent_repost(
 ) -> bool:
     print("\n=== 6. Re-POST same URL (idempotency) ===")
     r = await client.post(f"{APP_URL}/ingest", json={"source_url": url}, timeout=10.0)
+    if r.status_code != 202:
+        _fail(f"re-POST expected 202, got {r.status_code}: {r.text}")
+        return False
     body = r.json()
     if body["job_id"] != job_id:
         _fail(f"job_id changed on re-POST: {body['job_id']} != {job_id}")

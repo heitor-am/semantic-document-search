@@ -53,7 +53,7 @@ eval:
 	uv run python -m app.evaluation.runner
 
 smoke:
-	uv run python scripts/smoke_ingestion.py $(URL)
+	uv run python scripts/smoke_ingestion.py "$(URL)"
 
 smoke-cleanup:
 	@test -n "$(URL)" || (echo "Usage: make smoke-cleanup URL=https://dev.to/..." && exit 1)
