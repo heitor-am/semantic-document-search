@@ -100,7 +100,10 @@ class QdrantRepository:
         prefetch_limit: int | None = None,
         filters: Mapping[str, Any] | None = None,
     ) -> list[VectorHit]:
-        prefetch_limit = prefetch_limit or (k * 4)
+        # Explicit None check so a caller passing prefetch_limit=0 (e.g.
+        # to disable a branch) doesn't silently get the default.
+        if prefetch_limit is None:
+            prefetch_limit = k * 4
         qdrant_filter = _build_filter(filters) if filters else None
 
         prefetch: list[models.Prefetch] = [

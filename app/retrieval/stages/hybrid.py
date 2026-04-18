@@ -13,9 +13,9 @@ from openai import AsyncOpenAI
 
 from app.retrieval.context import Candidate, Context
 from app.retrieval.pipeline import Stage, StageError
-from app.retrieval.sparse_encoder import encode_bm25_sparse
 from app.shared.ai.embeddings import embed_texts
 from app.shared.qdrant.repository import SparseValue, VectorRepository
+from app.shared.qdrant.sparse_encoder import encode_bm25_sparse
 
 
 class HybridSearchStage(Stage):

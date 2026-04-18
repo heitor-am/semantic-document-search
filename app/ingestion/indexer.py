@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from app.ingestion.schemas import Chunk
-from app.retrieval.sparse_encoder import encode_bm25_sparse
 from app.shared.qdrant.collections import DENSE_VECTOR_NAME, SPARSE_VECTOR_NAME
 from app.shared.qdrant.repository import SparseValue, VectorPoint, VectorRepository
+from app.shared.qdrant.sparse_encoder import encode_bm25_sparse
 
 
 async def index_chunks(

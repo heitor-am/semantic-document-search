@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.retrieval.sparse_encoder import encode_bm25_sparse, tokenize
+from app.shared.qdrant.sparse_encoder import encode_bm25_sparse, tokenize
 
 
 class TestTokenize:
