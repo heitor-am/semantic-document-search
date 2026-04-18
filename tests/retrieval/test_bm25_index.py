@@ -105,63 +105,66 @@ class TestBM25IndexSeed:
 
 
 class TestBM25IndexRebuild:
-    async def test_rebuilds_from_qdrant_scroll(self) -> None:
-        client = MagicMock()
-        # Two scroll batches; first returns 2 points + next_offset, second
-        # returns 1 point + None (end).
+    async def test_rebuilds_from_vector_repo_scroll(self) -> None:
+        from app.shared.qdrant.repository import VectorHit
+
+        # Two scroll batches; first returns 2 hits + next_offset, second
+        # returns 1 hit + None (end).
         batch_1 = (
             [
-                MagicMock(id="c1", payload={"content": "python async", "is_parent": False}),
-                MagicMock(id="c2", payload={"content": "javascript loops", "is_parent": False}),
+                VectorHit(id="c1", score=0.0, payload={"content": "python async"}),
+                VectorHit(id="c2", score=0.0, payload={"content": "javascript loops"}),
             ],
             "offset-1",
         )
         batch_2 = (
-            [
-                MagicMock(id="c3", payload={"content": "rust ownership", "is_parent": False}),
-            ],
+            [VectorHit(id="c3", score=0.0, payload={"content": "rust ownership"})],
             None,
         )
-        client.scroll = AsyncMock(side_effect=[batch_1, batch_2])
+        repo = MagicMock()
+        repo.scroll = AsyncMock(side_effect=[batch_1, batch_2])
 
         idx = BM25Index()
-        indexed = await idx.rebuild(client, "docs_v1", batch_size=2)
+        indexed = await idx.rebuild(repo, batch_size=2)
 
         assert indexed == 3
         assert idx.size == 3
-        # Verify scroll filter pins is_parent=False
-        first_kwargs = client.scroll.await_args_list[0].kwargs
-        assert first_kwargs["collection_name"] == "docs_v1"
+        # First call filters to children and passes the batch_size.
+        first_kwargs = repo.scroll.await_args_list[0].kwargs
+        assert first_kwargs["filters"] == {"is_parent": False}
         assert first_kwargs["limit"] == 2
-        # offset/scroll_filter types come from qdrant-client; just sanity-check
-        assert first_kwargs.get("scroll_filter") is not None
+        # Second call passes the offset from the first call.
+        second_kwargs = repo.scroll.await_args_list[1].kwargs
+        assert second_kwargs["offset"] == "offset-1"
 
     async def test_rebuild_of_empty_collection_leaves_index_empty(self) -> None:
-        client = MagicMock()
-        client.scroll = AsyncMock(return_value=([], None))
+        repo = MagicMock()
+        repo.scroll = AsyncMock(return_value=([], None))
 
         idx = BM25Index()
-        indexed = await idx.rebuild(client, "docs_v1")
+        indexed = await idx.rebuild(repo)
 
         assert indexed == 0
         assert idx.size == 0
         assert idx.search("anything", k=5) == []
 
     async def test_rebuild_skips_children_with_empty_content(self) -> None:
-        client = MagicMock()
-        client.scroll = AsyncMock(
+        from app.shared.qdrant.repository import VectorHit
+
+        repo = MagicMock()
+        repo.scroll = AsyncMock(
             return_value=(
                 [
-                    MagicMock(id="c1", payload={"content": "real content"}),
-                    MagicMock(id="c2", payload={"content": ""}),
-                    MagicMock(id="c3", payload={}),
+                    VectorHit(id="c1", score=0.0, payload={"content": "real content"}),
+                    VectorHit(id="c2", score=0.0, payload={"content": ""}),
+                    VectorHit(id="c3", score=0.0, payload={}),
                 ],
                 None,
             )
         )
 
         idx = BM25Index()
-        indexed = await idx.rebuild(client, "docs_v1")
+        indexed = await idx.rebuild(repo)
 
         assert indexed == 1
 

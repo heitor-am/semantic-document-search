@@ -1,8 +1,9 @@
 """Sparse (BM25) search stage.
 
-Reads from the shared `BM25Index` on the app state. If the index is empty
-(fresh app, nothing ingested yet, or rebuild pending), this stage produces
-an empty list instead of failing — fusion merges whatever it gets.
+Uses the `BM25Index` instance injected at construction time (the lifespan
+builds one shared index and passes it in). If the index is empty (fresh
+app, nothing ingested yet, or rebuild pending), this stage produces an
+empty list instead of failing — fusion merges whatever it gets.
 """
 
 from __future__ import annotations

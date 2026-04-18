@@ -83,6 +83,38 @@ class TestSearch:
         assert hits[0].payload == {}
 
 
+class TestScroll:
+    async def test_returns_hits_and_offset_from_client(self) -> None:
+        repo, client = make_repo()
+        scroll_points = [
+            MagicMock(id="c1", payload={"content": "a"}),
+            MagicMock(id="c2", payload={"content": "b"}),
+        ]
+        client.scroll = AsyncMock(return_value=(scroll_points, "next-offset"))
+
+        hits, offset = await repo.scroll(filters={"is_parent": False}, limit=2)
+
+        assert [h.id for h in hits] == ["c1", "c2"]
+        assert hits[0].score == 0.0  # scroll doesn't produce scores
+        assert hits[0].payload == {"content": "a"}
+        assert offset == "next-offset"
+
+        _, kwargs = client.scroll.await_args
+        assert kwargs["collection_name"] == "docs_v1"
+        assert kwargs["limit"] == 2
+        assert kwargs["with_vectors"] is False
+        assert kwargs["query_filter" if "query_filter" in kwargs else "scroll_filter"] is not None
+
+    async def test_none_offset_signals_end(self) -> None:
+        repo, client = make_repo()
+        client.scroll = AsyncMock(return_value=([], None))
+
+        hits, offset = await repo.scroll()
+
+        assert hits == []
+        assert offset is None
+
+
 class TestDeleteBySource:
     async def test_deletes_points_matching_source_url(self) -> None:
         repo, client = make_repo()

@@ -19,11 +19,10 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import structlog
-from qdrant_client import AsyncQdrantClient
-from qdrant_client.http import models
 from rank_bm25 import BM25Okapi
 
 from app.retrieval.context import Candidate
+from app.shared.qdrant.repository import VectorRepository
 
 logger = structlog.get_logger()
 
@@ -69,48 +68,41 @@ class BM25Index:
 
     async def rebuild(
         self,
-        client: AsyncQdrantClient,
-        collection: str,
+        vector_repo: VectorRepository,
         *,
         batch_size: int = 256,
     ) -> int:
-        """Scroll every child chunk out of Qdrant and rebuild the index.
+        """Scroll every child chunk through the VectorRepository and rebuild.
 
-        Returns the number of entries indexed.
+        Returns the number of entries indexed. Using the repository protocol
+        (instead of poking at AsyncQdrantClient directly) keeps retrieval
+        decoupled from the vector store — tests inject a fake repo, and a
+        Milvus/Weaviate migration only touches the repository.
         """
         corpus: list[list[str]] = []
         entries: list[_Entry] = []
-        next_offset: Any = None
-
-        children_only = models.Filter(
-            must=[
-                models.FieldCondition(key="is_parent", match=models.MatchValue(value=False)),
-            ],
-        )
+        offset: Any = None
 
         while True:
-            points, next_offset = await client.scroll(
-                collection_name=collection,
-                scroll_filter=children_only,
-                offset=next_offset,
+            hits, offset = await vector_repo.scroll(
+                filters={"is_parent": False},
+                offset=offset,
                 limit=batch_size,
-                with_payload=True,
-                with_vectors=False,
             )
-            for p in points:
-                payload = dict(p.payload or {})
+            for hit in hits:
+                payload = dict(hit.payload)
                 tokens = tokenize(str(payload.get("content", "")))
                 if not tokens:
                     continue
                 corpus.append(tokens)
-                entries.append(_Entry(chunk_id=str(p.id), payload=payload))
-            if next_offset is None:
+                entries.append(_Entry(chunk_id=hit.id, payload=payload))
+            if offset is None:
                 break
 
         self._bm25 = BM25Okapi(corpus) if corpus else None
         self._entries = entries
         self._corpus = corpus
-        logger.info("bm25.rebuilt", collection=collection, entries=len(entries))
+        logger.info("bm25.rebuilt", entries=len(entries))
         return len(entries)
 
     def search(self, query: str, *, k: int) -> list[Candidate]:
@@ -118,8 +110,10 @@ class BM25Index:
 
         Empty query (no tokens after normalization) or empty index yields []
         instead of raising — downstream fusion handles the empty branch.
-        Docs without any query-token overlap are excluded even if BM25 would
-        assign them a non-zero (possibly negative) score.
+        Filters by explicit query-token overlap rather than `score > 0`
+        because BM25's IDF can go negative on tiny corpora (a term that
+        appears in most docs gets negative IDF), so score-sign filtering
+        would drop legitimate matches.
         """
         if self._bm25 is None or not self._entries:
             return []
@@ -140,7 +134,8 @@ class BM25Index:
             Candidate(
                 chunk_id=self._entries[i].chunk_id,
                 score=score,
-                payload=self._entries[i].payload,
+                # Copy so downstream stages can't mutate the index's state.
+                payload=dict(self._entries[i].payload),
             )
             for score, i in ranked[:k]
         ]
