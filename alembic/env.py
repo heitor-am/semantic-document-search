@@ -7,7 +7,10 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from app.config import get_settings
-from app.ingestion.models import IngestJob, JobTransition  # noqa: F401  (register with Base.metadata)
+from app.ingestion.models import (  # noqa: F401  (register with Base.metadata)
+    IngestJob,
+    JobTransition,
+)
 from app.shared.db.database import Base
 
 config = context.config
