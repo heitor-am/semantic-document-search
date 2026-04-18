@@ -28,7 +28,7 @@ RUN uv sync --frozen --no-dev || uv sync --no-dev
 # this, the first /search or /ingest call after a Fly cold-start would
 # block ~10s while the model downloads.
 ENV FASTEMBED_CACHE_DIR=/app/.fastembed-cache
-RUN python -c "from fastembed import SparseTextEmbedding; SparseTextEmbedding(model_name='Qdrant/bm25', cache_dir='/app/.fastembed-cache')"
+RUN /app/.venv/bin/python -c "from fastembed import SparseTextEmbedding; SparseTextEmbedding(model_name='Qdrant/bm25', cache_dir='/app/.fastembed-cache')"
 
 # ---------- Runtime stage ----------
 FROM python:${PYTHON_VERSION}-slim AS runtime

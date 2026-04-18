@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import pytest
+
+from app.shared.qdrant import sparse_encoder
 from app.shared.qdrant.sparse_encoder import encode_bm25_sparse
 
 
@@ -49,3 +52,40 @@ class TestEncodeBm25Sparse:
         # "slow" should index.
         indices, _ = encode_bm25_sparse("my app feels slow")
         assert len(indices) >= 2
+
+
+class TestModelCacheDir:
+    """The Docker build pre-warms the model into FASTEMBED_CACHE_DIR;
+    the runtime stage relies on the same env var to look it up. If this
+    plumbing breaks, prod cold-starts re-download ~50MB before serving
+    the first request — silent and only visible at deploy time, hence
+    the explicit unit coverage.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _reset_singleton(self) -> None:
+        sparse_encoder._model = None
+
+    def test_passes_cache_dir_when_env_set(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        captured: dict[str, object] = {}
+
+        class FakeModel:
+            def __init__(self, **kwargs: object) -> None:
+                captured.update(kwargs)
+
+        monkeypatch.setenv("FASTEMBED_CACHE_DIR", "/tmp/sds-fastembed-cache")
+        monkeypatch.setattr(sparse_encoder, "SparseTextEmbedding", FakeModel)
+        sparse_encoder._get_model()
+        assert captured == {"model_name": "Qdrant/bm25", "cache_dir": "/tmp/sds-fastembed-cache"}
+
+    def test_omits_cache_dir_when_env_unset(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        captured: dict[str, object] = {}
+
+        class FakeModel:
+            def __init__(self, **kwargs: object) -> None:
+                captured.update(kwargs)
+
+        monkeypatch.delenv("FASTEMBED_CACHE_DIR", raising=False)
+        monkeypatch.setattr(sparse_encoder, "SparseTextEmbedding", FakeModel)
+        sparse_encoder._get_model()
+        assert captured == {"model_name": "Qdrant/bm25"}

@@ -26,7 +26,6 @@ Trade-offs:
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
 from fastembed import SparseTextEmbedding
 
@@ -43,12 +42,12 @@ def _get_model() -> SparseTextEmbedding:
     if _model is None:
         # FASTEMBED_CACHE_DIR pins the model location so the Docker build
         # can pre-warm into a known path that the runtime stage inherits.
-        # Default (None) falls back to ~/.cache/fastembed for local dev.
+        # Unset → FastEmbed falls back to ~/.cache/fastembed (local dev).
         cache_dir = os.environ.get("FASTEMBED_CACHE_DIR")
-        kwargs: dict[str, object] = {"model_name": _MODEL_NAME}
         if cache_dir:
-            kwargs["cache_dir"] = Path(cache_dir)
-        _model = SparseTextEmbedding(**kwargs)  # type: ignore[arg-type]
+            _model = SparseTextEmbedding(model_name=_MODEL_NAME, cache_dir=cache_dir)
+        else:
+            _model = SparseTextEmbedding(model_name=_MODEL_NAME)
     return _model
 
 
