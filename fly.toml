@@ -1,0 +1,37 @@
+app = "semantic-document-search"
+primary_region = "gru"
+
+[build]
+
+[env]
+  DATABASE_URL = "sqlite+aiosqlite:////data/jobs.db"
+  ENVIRONMENT = "production"
+  LOG_LEVEL = "INFO"
+  OPENROUTER_APP_NAME = "Semantic Document Search"
+  OPENROUTER_APP_URL = "https://semantic-document-search.fly.dev"
+  AI_FEATURES_ENABLED = "true"
+  QDRANT_COLLECTION_VERSION = "v1"
+
+[[mounts]]
+  source = "sds_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[[http_service.checks]]
+  grace_period = "10s"
+  interval = "30s"
+  method = "GET"
+  timeout = "5s"
+  path = "/health"
