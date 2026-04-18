@@ -33,8 +33,13 @@ TOP_K = 10  # fetch 10 so recall@5 and recall@10 both land in the same call
 
 
 def load_queries(path: Path) -> list[GoldenQuery]:
-    with path.open() as f:
-        raw = yaml.safe_load(f)
+    with path.open(encoding="utf-8") as f:
+        try:
+            raw = yaml.safe_load(f)
+        except yaml.YAMLError as exc:
+            raise ValueError(f"Invalid YAML in {path}: {exc}") from exc
+    if raw is None:
+        return []
     return GoldenSet.model_validate(raw).queries
 
 
@@ -172,10 +177,11 @@ async def run(app_url: str, queries_path: Path, strategies: Sequence[Strategy]) 
             print(f"  - {qid} / {strat}")
 
     # Regression tripwire: WARN when a query's recall@5 is below the
-    # declared floor for any strategy.
+    # declared floor for any strategy. O(1) lookup by query id.
+    queries_by_id = {q.id: q for q in queries}
     regressions: list[str] = []
     for r in results:
-        q = next(x for x in queries if x.id == r.query_id)
+        q = queries_by_id[r.query_id]
         if q.min_recall_at_5 is not None and r.recall_at_5 < q.min_recall_at_5:
             regressions.append(
                 f"  {r.query_id} [{r.strategy.value}]: recall@5={r.recall_at_5:.2f} "

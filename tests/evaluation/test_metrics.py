@@ -52,15 +52,11 @@ class TestNdcgAtK:
     def test_perfect_ordering_is_1(self) -> None:
         assert ndcg_at_k(["a", "b"], ["a", "b"], k=2) == pytest.approx(1.0)
 
-    def test_reversed_ordering_below_1(self) -> None:
-        # Both relevant but in reverse-ideal order
-        score = ndcg_at_k(["b", "a"], ["a", "b"], k=2)
-        # DCG = 1/log2(2) + 1/log2(3) = 1 + 0.6309
-        # IDCG = 1 + 1/log2(3) = 1.6309 → perfect for 2 relevant items
-        # Actually with binary relevance and 2 relevant, any permutation of
-        # the 2 relevant items produces the same DCG (position matters but
-        # both positions contribute). Let's just verify bounded.
-        assert 0.0 < score <= 1.0
+    def test_any_permutation_of_relevant_items_is_bounded(self) -> None:
+        # With binary relevance and 2 relevant items packed in the top 2
+        # slots, any permutation yields the same DCG as the ideal one.
+        # Verifying the bound and full recovery, not "reversed is worse".
+        assert ndcg_at_k(["b", "a"], ["a", "b"], k=2) == pytest.approx(1.0)
 
     def test_irrelevant_dilutes(self) -> None:
         perfect = ndcg_at_k(["a", "b"], ["a", "b"], k=2)

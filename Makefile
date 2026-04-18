@@ -1,4 +1,4 @@
-.PHONY: help install dev test lint fmt typecheck check migrate migration eval smoke smoke-cleanup diagram-states docker-build docker-up docker-down deploy clean
+.PHONY: help install dev test lint fmt typecheck check migrate migration eval eval-save seed smoke smoke-cleanup diagram-states docker-build docker-up docker-down deploy clean
 
 help:
 	@echo "Available targets:"
@@ -54,7 +54,9 @@ eval:
 	uv run python -m app.evaluation.runner
 
 eval-save:
-	uv run python -m app.evaluation.runner | tee docs/eval-results.txt
+	# pipefail so tee doesn't mask the runner's exit code — regressions
+	# must bubble up to CI / local shells.
+	bash -o pipefail -c 'uv run python -m app.evaluation.runner | tee docs/eval-results.txt'
 
 smoke:
 	uv run python scripts/smoke_ingestion.py "$(URL)"

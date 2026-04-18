@@ -1,6 +1,7 @@
 # Golden query set for Q3 retrieval evaluation. URLs resolved from the
 # live corpus (documents_baai_bge_m3_v2) by title-substring match.
-# Regenerate via scripts/build_queries.py if the corpus changes.
+# Update this file by hand if the corpus changes (add/remove entries
+# or adjust expected_source_urls to the new URLs emitted by Qdrant).
 
 queries:
 - id: redis-to-postgres

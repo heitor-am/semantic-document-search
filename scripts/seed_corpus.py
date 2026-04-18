@@ -23,6 +23,9 @@ Behaviour
   consistent. Parallelism would complicate rate-limit handling against
   dev.to + OpenRouter for little wall-clock gain at this scale.
 - Prints a per-URL line (`OK` / `FAIL`) and a final summary.
+- Poll timeout is POLL_TIMEOUT_S iterations at POLL_INTERVAL_S each
+  (90s by default — bge-m3 embed + index for ~25 chunks is the worst
+  case).
 
 Exit code: 0 if every URL completed, 1 if any failed.
 """
@@ -45,7 +48,7 @@ POLL_INTERVAL_S = 1.0
 
 def read_urls(path: Path) -> list[str]:
     urls: list[str] = []
-    for raw in path.read_text().splitlines():
+    for raw in path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
