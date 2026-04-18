@@ -104,11 +104,12 @@ class IngestJob:
         self._last_transition_at = now
 
 
-def get_state_diagram(output_path: str | Path) -> Path:
+def get_state_diagram(output_path: str | Path) -> Path:  # pragma: no cover
     """Export the FSM graph to a PNG file.
 
     Requires the `graphviz` Python package plus the system `dot` binary.
-    Run via `make diagram-states`.
+    Run via `make diagram-states`. Excluded from coverage because it's a
+    dev utility — the FSM logic itself is fully covered by unit tests.
     """
     from transitions.extensions import GraphMachine
 
