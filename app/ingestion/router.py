@@ -64,8 +64,10 @@ async def start_ingestion(
             from_state=existing.state,
             to_state=JobState.PENDING,
         )
+        await db.refresh(existing)
+        job = existing
     else:
-        await job_repository.create(db, job_id=job_id, source_url=source_url)
+        job = await job_repository.create(db, job_id=job_id, source_url=source_url)
 
     background_tasks.add_task(
         run_ingestion,
@@ -77,10 +79,8 @@ async def start_ingestion(
         session_maker=SessionLocal,
     )
 
-    fresh = await job_repository.get(db, job_id)
-    assert fresh is not None  # just created or retried above
     transitions = await job_repository.get_transitions(db, job_id)
-    return _to_read(fresh, transitions)
+    return _to_read(job, transitions)
 
 
 @router.get("/jobs/{job_id}", response_model=IngestJobRead)
