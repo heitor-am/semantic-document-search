@@ -7,10 +7,11 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from app.config import get_settings
+from app.ingestion.models import (  # noqa: F401  (register with Base.metadata)
+    IngestJob,
+    JobTransition,
+)
 from app.shared.db.database import Base
-
-# Import feature models here so Alembic autogenerate detects them.
-# Populated as features are added (ingestion is the first, coming in Etapa 3).
 
 config = context.config
 
