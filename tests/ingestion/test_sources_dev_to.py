@@ -6,6 +6,7 @@ import respx
 
 from app.ingestion.sources.dev_to import (
     InvalidDevToUrlError,
+    _parse_tags,
     fetch_dev_to,
     parse_dev_to_url,
 )
@@ -115,6 +116,21 @@ class TestFetchDevTo:
         assert doc.tags == []
 
     @respx.mock
+    async def test_accepts_csv_string_for_tag_list(self) -> None:
+        # dev.to's article detail endpoint returns tag_list as a CSV string,
+        # not a list. A real article (Sylwia Lask's overengineering post)
+        # surfaced this during smoke testing.
+        csv_response = {**SAMPLE_API_RESPONSE, "tag_list": "webdev, javascript, css, browser"}
+        respx.get("https://dev.to/api/articles/author/a-great-post-abc123").mock(
+            return_value=httpx.Response(200, json=csv_response)
+        )
+
+        async with httpx.AsyncClient() as client:
+            doc = await fetch_dev_to(SAMPLE_ARTICLE_URL, client=client)
+
+        assert doc.tags == ["webdev", "javascript", "css", "browser"]
+
+    @respx.mock
     async def test_propagates_http_errors(self) -> None:
         respx.get("https://dev.to/api/articles/author/a-great-post-abc123").mock(
             return_value=httpx.Response(404, json={"error": "Not Found"})
@@ -123,3 +139,31 @@ class TestFetchDevTo:
         async with httpx.AsyncClient() as client:
             with pytest.raises(httpx.HTTPStatusError):
                 await fetch_dev_to(SAMPLE_ARTICLE_URL, client=client)
+
+
+class TestParseTags:
+    def test_csv_string_splits_and_strips(self) -> None:
+        assert _parse_tags("webdev, javascript, css, browser") == [
+            "webdev",
+            "javascript",
+            "css",
+            "browser",
+        ]
+
+    def test_list_is_passed_through_as_strings(self) -> None:
+        assert _parse_tags(["python", "rag"]) == ["python", "rag"]
+
+    def test_empty_string_becomes_empty_list(self) -> None:
+        assert _parse_tags("") == []
+
+    def test_none_becomes_empty_list(self) -> None:
+        assert _parse_tags(None) == []
+
+    def test_unexpected_shape_falls_back_to_empty(self) -> None:
+        assert _parse_tags({"unexpected": "dict"}) == []
+
+    def test_single_tag_csv_works(self) -> None:
+        assert _parse_tags("python") == ["python"]
+
+    def test_trailing_comma_is_ignored(self) -> None:
+        assert _parse_tags("python,rag,") == ["python", "rag"]
