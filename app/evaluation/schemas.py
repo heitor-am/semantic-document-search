@@ -35,6 +35,9 @@ class QueryResult(BaseModel):
     query_id: str
     query: str
     strategy: Strategy
+    precision_at_1: float
+    recall_at_1: float
+    recall_at_3: float
     recall_at_5: float
     recall_at_10: float
     mrr: float
@@ -45,6 +48,9 @@ class QueryResult(BaseModel):
 
 class StrategySummary(BaseModel):
     strategy: Strategy
+    mean_precision_at_1: float
+    mean_recall_at_1: float
+    mean_recall_at_3: float
     mean_recall_at_5: float
     mean_recall_at_10: float
     mean_mrr: float
