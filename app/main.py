@@ -11,6 +11,7 @@ from app import __version__
 from app.config import get_settings
 from app.ingestion import router as ingestion_router
 from app.ingestion.service import current_collection_name
+from app.retrieval import router as retrieval_router
 from app.shared.ai.client import get_openrouter_client
 from app.shared.api.routers import health
 from app.shared.core.exceptions import AppError, app_error_handler, validation_exception_handler
@@ -78,6 +79,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(ingestion_router.router)
+    app.include_router(retrieval_router.router)
 
     @app.get("/", include_in_schema=False)
     async def landing() -> FileResponse:
