@@ -36,6 +36,18 @@ class VectorRepository(Protocol):
         filters: Mapping[str, Any] | None = None,
     ) -> list[VectorHit]: ...
 
+    async def scroll(
+        self,
+        *,
+        filters: Mapping[str, Any] | None = None,
+        limit: int = 256,
+        offset: Any = None,
+    ) -> tuple[list[VectorHit], Any]:
+        """Paginated iteration over payloads without vectors. The returned
+        offset is opaque — pass it back verbatim to fetch the next page;
+        `None` signals the end."""
+        ...
+
     async def delete_by_source(self, source_url: str) -> None: ...
 
 
@@ -77,6 +89,24 @@ class QdrantRepository:
             VectorHit(id=str(p.id), score=float(p.score), payload=dict(p.payload or {}))
             for p in response.points
         ]
+
+    async def scroll(
+        self,
+        *,
+        filters: Mapping[str, Any] | None = None,
+        limit: int = 256,
+        offset: Any = None,
+    ) -> tuple[list[VectorHit], Any]:
+        points, next_offset = await self._client.scroll(
+            collection_name=self._collection,
+            scroll_filter=_build_filter(filters) if filters else None,
+            offset=offset,
+            limit=limit,
+            with_payload=True,
+            with_vectors=False,
+        )
+        hits = [VectorHit(id=str(p.id), score=0.0, payload=dict(p.payload or {})) for p in points]
+        return hits, next_offset
 
     async def delete_by_source(self, source_url: str) -> None:
         selector = models.FilterSelector(
