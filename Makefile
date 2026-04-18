@@ -1,4 +1,4 @@
-.PHONY: help install dev test lint fmt typecheck check migrate migration eval diagram-states docker-build docker-up docker-down deploy clean
+.PHONY: help install dev test lint fmt typecheck check migrate migration eval smoke smoke-cleanup diagram-states docker-build docker-up docker-down deploy clean
 
 help:
 	@echo "Available targets:"
@@ -12,6 +12,8 @@ help:
 	@echo "  migrate         - Apply Alembic migrations"
 	@echo "  migration       - Create new migration (usage: make migration m='describe your change')"
 	@echo "  eval            - Run evaluation framework against golden set"
+	@echo "  smoke           - End-to-end smoke against real Qdrant+OpenRouter (needs 'make dev' in another terminal)"
+	@echo "  smoke-cleanup   - Remove smoke test's points from Qdrant (usage: make smoke-cleanup URL=...)"
 	@echo "  diagram-states  - Export ingestion FSM state diagram (PNG)"
 	@echo "  docker-build    - Build Docker image"
 	@echo "  docker-up       - Start docker-compose (app + local Qdrant)"
@@ -49,6 +51,13 @@ migration:
 
 eval:
 	uv run python -m app.evaluation.runner
+
+smoke:
+	uv run python scripts/smoke_ingestion.py $(URL)
+
+smoke-cleanup:
+	@test -n "$(URL)" || (echo "Usage: make smoke-cleanup URL=https://dev.to/..." && exit 1)
+	uv run python scripts/smoke_cleanup.py "$(URL)"
 
 diagram-states:
 	uv run python -c "from app.ingestion.state import get_state_diagram; get_state_diagram('docs/diagrams/ingestion-fsm.png')"
