@@ -29,11 +29,15 @@ class HybridSearchStage(Stage):
         openai_client: AsyncOpenAI,
         embedding_model: str,
         prefetch_multiplier: int = 4,
+        sparse_enabled: bool = True,
     ) -> None:
         self._vector_repo = vector_repo
         self._openai_client = openai_client
         self._embedding_model = embedding_model
         self._prefetch_multiplier = prefetch_multiplier
+        # When False the stage skips BM25 entirely, collapsing to dense-only
+        # retrieval. Used by Strategy.DENSE_ONLY as an eval baseline.
+        self._sparse_enabled = sparse_enabled
 
     async def run(self, ctx: Context) -> Context:
         dense_vectors = await embed_texts(
@@ -44,10 +48,15 @@ class HybridSearchStage(Stage):
         if not dense_vectors:
             raise StageError(self.name, cause=ValueError("empty query embedding"))
 
-        sparse_indices, sparse_values = encode_bm25_sparse(ctx.query)
-        sparse = (
-            SparseValue(indices=sparse_indices, values=sparse_values) if sparse_indices else None
-        )
+        if self._sparse_enabled:
+            sparse_indices, sparse_values = encode_bm25_sparse(ctx.query)
+            sparse = (
+                SparseValue(indices=sparse_indices, values=sparse_values)
+                if sparse_indices
+                else None
+            )
+        else:
+            sparse = None
 
         hits = await self._vector_repo.search_hybrid(
             dense_vector=dense_vectors[0],

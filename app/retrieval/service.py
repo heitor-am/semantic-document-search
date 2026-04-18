@@ -5,8 +5,14 @@ one place means the router doesn't have to know which stages exist,
 and the eval framework (Etapa 12) can run the same strategies it sees
 in prod without reaching into stage wiring.
 
-    HYBRID          → HybridSearchStage  + ParentChildStage
-    HYBRID_RERANK   → HybridSearchStage  + RerankerStage + ParentChildStage
+    DENSE_ONLY      → HybridSearchStage(sparse_enabled=False) + ParentChildStage
+    HYBRID          → HybridSearchStage + ParentChildStage
+    HYBRID_RERANK   → HybridSearchStage + RerankerStage + ParentChildStage
+
+DENSE_ONLY exists as a baseline for empirical comparison in eval — it
+mirrors the "plain semantic retrieval" approach most RAGs ship with, so
+the numbers in docs/eval-results.txt can justify (or not) every
+complexity added on top (BM25 sparse fusion, cross-encoder rerank).
 """
 
 from __future__ import annotations
@@ -25,6 +31,7 @@ from app.shared.qdrant.repository import VectorRepository
 
 
 class Strategy(StrEnum):
+    DENSE_ONLY = "dense_only"
     HYBRID = "hybrid"
     HYBRID_RERANK = "hybrid_rerank"
 
@@ -47,6 +54,7 @@ def build_pipeline(
             vector_repo=vector_repo,
             openai_client=openai_client,
             embedding_model=s.openrouter_embedding_model,
+            sparse_enabled=(strategy != Strategy.DENSE_ONLY),
         ),
     ]
 

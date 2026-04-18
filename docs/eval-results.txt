@@ -1,65 +1,84 @@
-Running 18 queries x 2 strategies against http://127.0.0.1:8000
+Running 18 queries x 3 strategies against http://127.0.0.1:8000
 
 =====================================================================
 STRATEGY             R@5      R@10     MRR      NDCG@5    NDCG@10   N
 ---------------------------------------------------------------------
-hybrid               0.972    1.000    0.917    0.922     0.932     18
-hybrid_rerank        0.972    1.000    0.963    0.957     0.968     18
+dense_only           0.972    0.972    0.944    0.938     0.938     18
+hybrid               0.972    1.000    0.917    0.919     0.930     18
+hybrid_rerank        0.972    0.972    0.963    0.957     0.957     18
 =====================================================================
 
 Per-query breakdown:
 
   redis-to-postgres: 'replace Redis with Postgres for caching'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   browser-apis-replace-libraries: 'browser built-in APIs that replace JavaScript libraries'
+    dense_only       R@5=0.50 MRR=1.00 NDCG@5=0.61
     hybrid           R@5=0.50 MRR=0.50 NDCG@5=0.39
     hybrid_rerank    R@5=0.50 MRR=0.33 NDCG@5=0.31
   modern-js-features: 'modern JavaScript language features and syntax'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   frontend-framework-comparison: 'compare frontend frameworks React Vue Svelte performance'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   rag-fastapi-production: 'production-ready RAG system with FastAPI and vector search'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=0.88
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=0.92
   local-rag-docker: 'self-hosted offline RAG with Docker and Llama'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   unit-tests-critique: 'are unit tests really effective at catching bugs'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   microservices-performance: 'microservices latency overhead vs monolith'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   agent-memory: 'how AI agents remember context across sessions'
-    hybrid           R@5=1.00 MRR=0.50 NDCG@5=0.69
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
+    hybrid           R@5=1.00 MRR=0.50 NDCG@5=0.65
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   llm-non-determinism: 'LLM non-determinism reliability production'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   rust-tui-tools: 'terminal UI in Rust for code navigation'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   webgpu-future: 'WebGPU browser 3D graphics capabilities'
+    dense_only       R@5=1.00 MRR=0.50 NDCG@5=0.63
     hybrid           R@5=1.00 MRR=0.50 NDCG@5=0.63
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   wasm-vs-js: 'WebAssembly replacing JavaScript for web'
+    dense_only       R@5=1.00 MRR=0.50 NDCG@5=0.63
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   ai-productivity-myth: 'does AI really make developers faster productivity claims'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   devops-learn-path: 'how to learn DevOps without tool overload'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   gpu-memory-ml: 'GPU memory bandwidth for machine learning training'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   nextjs-boilerplate-saas: 'Next.js SaaS starter boilerplate'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00
   local-first-architecture: 'local-first app architecture offline sync'
+    dense_only       R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid           R@5=1.00 MRR=1.00 NDCG@5=1.00
     hybrid_rerank    R@5=1.00 MRR=1.00 NDCG@5=1.00

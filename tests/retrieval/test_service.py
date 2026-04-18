@@ -23,7 +23,20 @@ def _settings() -> Settings:
 
 
 class TestBuildPipeline:
-    def test_hybrid_strategy_has_two_stages(self) -> None:
+    def test_dense_only_strategy_has_hybrid_stage_with_sparse_disabled(self) -> None:
+        pipe = build_pipeline(
+            Strategy.DENSE_ONLY,
+            vector_repo=MagicMock(),
+            openai_client=MagicMock(),
+            httpx_client=MagicMock(spec=httpx.AsyncClient),
+            settings=_settings(),
+        )
+        names = [s.name for s in pipe.stages]
+        assert names == ["hybrid", "parent_child"]
+        hybrid = next(s for s in pipe.stages if isinstance(s, HybridSearchStage))
+        assert hybrid._sparse_enabled is False
+
+    def test_hybrid_strategy_has_two_stages_with_sparse_enabled(self) -> None:
         pipe = build_pipeline(
             Strategy.HYBRID,
             vector_repo=MagicMock(),
@@ -33,6 +46,8 @@ class TestBuildPipeline:
         )
         names = [s.name for s in pipe.stages]
         assert names == ["hybrid", "parent_child"]
+        hybrid = next(s for s in pipe.stages if isinstance(s, HybridSearchStage))
+        assert hybrid._sparse_enabled is True
 
     def test_hybrid_rerank_strategy_inserts_reranker_before_parent_child(self) -> None:
         pipe = build_pipeline(

@@ -24,7 +24,11 @@ from app.retrieval.service import Strategy
 
 DEFAULT_APP_URL = "http://127.0.0.1:8000"
 DEFAULT_QUERIES_PATH = Path(__file__).parent / "queries.yaml"
-DEFAULT_STRATEGIES: tuple[Strategy, ...] = (Strategy.HYBRID, Strategy.HYBRID_RERANK)
+DEFAULT_STRATEGIES: tuple[Strategy, ...] = (
+    Strategy.DENSE_ONLY,
+    Strategy.HYBRID,
+    Strategy.HYBRID_RERANK,
+)
 TOP_K = 10  # fetch 10 so recall@5 and recall@10 both land in the same call
 
 
@@ -39,13 +43,20 @@ async def run_one(
     app_url: str,
     query: GoldenQuery,
     strategy: Strategy,
-) -> QueryResult:
-    response = await client.get(
-        f"{app_url}/search",
-        params={"q": query.query, "strategy": strategy.value, "top_k": TOP_K},
-        timeout=30.0,
-    )
-    response.raise_for_status()
+) -> QueryResult | None:
+    """Runs one (query, strategy) pair through /search. Returns None on a
+    persistent backend failure so the rest of the suite can continue — the
+    caller notes it as a warning in the summary."""
+    try:
+        response = await client.get(
+            f"{app_url}/search",
+            params={"q": query.query, "strategy": strategy.value, "top_k": TOP_K},
+            timeout=60.0,
+        )
+        response.raise_for_status()
+    except (httpx.HTTPError, httpx.TimeoutException) as exc:
+        print(f"  [{query.id} / {strategy.value}] backend error: {exc}")
+        return None
     body = response.json()
     # Dedup by source_url preserving rank order: /search returns chunk-
     # level hits, but eval is document-level (recall = "did we surface
@@ -133,16 +144,32 @@ async def run(app_url: str, queries_path: Path, strategies: Sequence[Strategy]) 
     print(f"Running {len(queries)} queries x {len(strategies)} strategies against {app_url}")
 
     results: list[QueryResult] = []
+    skipped: list[tuple[str, str]] = []
+    # Throttle: OpenRouter's bge-m3 free tier rate-limits on sustained
+    # request rate and occasionally returns HTTP 200 with `data=[]`
+    # instead of a 429. Pausing between strategies gives the limiter
+    # headroom; 18 queries * 3 strategies = 54 calls, the extra time is
+    # seconds. Individual failures (after embed_texts's 6 retries) are
+    # skipped, not fatal.
     async with httpx.AsyncClient() as client:
         for q in queries:
             for strategy in strategies:
                 r = await run_one(client, app_url, q, strategy)
-                results.append(r)
+                if r is None:
+                    skipped.append((q.id, strategy.value))
+                else:
+                    results.append(r)
+                await asyncio.sleep(0.3)
 
     summaries = [summarise(results, s) for s in strategies]
     print()
     print_table(summaries)
     print_per_query(results)
+    if skipped:
+        print()
+        print(f"Skipped {len(skipped)} (query, strategy) pairs due to backend errors:")
+        for qid, strat in skipped:
+            print(f"  - {qid} / {strat}")
 
     # Regression tripwire: WARN when a query's recall@5 is below the
     # declared floor for any strategy.
