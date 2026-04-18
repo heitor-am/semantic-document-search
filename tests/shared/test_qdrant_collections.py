@@ -1,12 +1,22 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from qdrant_client.http.exceptions import UnexpectedResponse
 
 from app.shared.qdrant.collections import (
     BGE_M3_DIM,
     collection_name_for,
     ensure_collection,
 )
+
+
+def _already_exists_error() -> UnexpectedResponse:
+    return UnexpectedResponse(
+        status_code=409,
+        reason_phrase="Conflict",
+        content=b"already exists",
+        headers=None,
+    )
 
 
 class TestCollectionNameFor:
@@ -29,6 +39,11 @@ class TestCollectionNameFor:
     def test_lowercases_model(self) -> None:
         # Upper/mixed-case inputs still produce a valid lowercase slug
         assert collection_name_for("BAAI/BGE-m3", "v1") == "documents_baai_bge_m3_v1"
+
+    @pytest.mark.parametrize("bad_version", ["v 1", "v/1", "v.1", "", "v1;drop"])
+    def test_rejects_unsafe_version(self, bad_version: str) -> None:
+        with pytest.raises(ValueError, match="invalid collection version"):
+            collection_name_for("baai/bge-m3", bad_version)
 
 
 class TestEnsureCollection:
@@ -61,6 +76,29 @@ class TestEnsureCollection:
 
         _, kwargs = client.create_collection.await_args
         assert kwargs["vectors_config"].size == 768
+
+    async def test_treats_concurrent_create_as_noop(self) -> None:
+        # First existence check -> False (we try to create);
+        # create_collection raises because a racing worker got there first;
+        # second existence check -> True (the race winner's create succeeded).
+        client = AsyncMock()
+        client.collection_exists = AsyncMock(side_effect=[False, True])
+        client.create_collection = AsyncMock(side_effect=_already_exists_error())
+
+        created = await ensure_collection(client, "documents_x_v1", vector_size=BGE_M3_DIM)
+
+        assert created is False
+        client.create_payload_index.assert_not_awaited()
+
+    async def test_reraises_when_create_fails_for_another_reason(self) -> None:
+        # create_collection raises, and the collection really isn't there —
+        # we must not swallow the failure.
+        client = AsyncMock()
+        client.collection_exists = AsyncMock(side_effect=[False, False])
+        client.create_collection = AsyncMock(side_effect=_already_exists_error())
+
+        with pytest.raises(UnexpectedResponse):
+            await ensure_collection(client, "documents_x_v1", vector_size=BGE_M3_DIM)
 
 
 @pytest.mark.parametrize(
