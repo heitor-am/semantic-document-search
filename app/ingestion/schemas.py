@@ -26,6 +26,42 @@ class SourceDocument(BaseModel):
     )
 
 
+class Chunk(BaseModel):
+    """Parent or child chunk produced by hierarchical splitting.
+
+    Parents preserve header sections; children are the embeddable units.
+    SourceDocument metadata is denormalized so retrieval can filter/rank
+    without a join back to the document table.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    chunk_id: str
+    parent_chunk_id: str | None = Field(
+        default=None,
+        description="None if this chunk is itself a parent; otherwise the parent's chunk_id.",
+    )
+    content: str
+    char_count: int
+    section_path: tuple[str, ...] = Field(
+        default_factory=tuple,
+        description="Ancestor headings (h1 → h3) for the section this chunk belongs to.",
+    )
+    chunk_index: int = Field(
+        description=(
+            "For a parent: its 0-based position among all parents in the document. "
+            "For a child: its 0-based position within the parent."
+        ),
+    )
+
+    source_url: str
+    source_type: str
+    title: str
+    author: str | None = None
+    published_at: datetime | None = None
+    tags: tuple[str, ...] = Field(default_factory=tuple)
+
+
 class IngestRequest(BaseModel):
     source_url: HttpUrl = Field(description="URL of the article to ingest (e.g. a dev.to post)")
 
